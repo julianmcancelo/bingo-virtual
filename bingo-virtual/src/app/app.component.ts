@@ -152,13 +152,9 @@ export class AppComponent implements OnInit, OnDestroy {
    */
   private configurarSocketIO(): void {
     // Suscribirse al estado de conexión
-    this.subscriptions.push(
-      this.socketService.conectado$.subscribe(estado => {
-        this.estaConectado = estado;
-        console.log('Estado de conexión:', this.estaConectado);
-      }),
-      this.socketService.socketId$.subscribe(id => {
-        this.socketId = id;
+    this.s$.subscribe(estado => {
+        // La lógica se manejará directamente en la plantilla con el pipe async
+        console.log('Nuevo estado de conexión:', estado);
       })
     );
 

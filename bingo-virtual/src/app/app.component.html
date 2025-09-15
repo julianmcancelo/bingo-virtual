@@ -7,12 +7,12 @@
         <h1 class="text-xl sm:text-2xl font-bold hidden sm:block">Bingo Virtual Educativo</h1>
       </div>
       <div class="flex items-center gap-4 text-xs sm:text-sm">
-        <p><strong>Conexión:</strong> 
-          <span [ngClass]="{'text-green-400': estaConectado, 'text-red-400': !estaConectado}" class="font-semibold flex items-center gap-1">
-            <span class="hidden sm:inline">{{ estaConectado ? 'Conectado' : 'Desconectado' }}</span>
-            <span class="sm:hidden">{{ estaConectado ? '✅' : '❌' }}</span>
-          </span>
-        </p>
+        <p *ngIf="socketService.conectado$ | async as isConnected"><strong>Conexión:</strong> 
+  <span [ngClass]="{'text-green-400': isConnected, 'text-red-400': !isConnected}" class="font-semibold flex items-center gap-1">
+    <span class="hidden sm:inline">{{ isConnected ? 'Conectado' : 'Desconectado' }}</span>
+    <span class="sm:hidden">{{ isConnected ? '✅' : '❌' }}</span>
+  </span>
+</p>
       </div>
     </div>
   </header>
