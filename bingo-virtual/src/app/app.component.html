@@ -1,5 +1,12 @@
 <div class="bg-gray-100 min-h-screen font-sans p-4 sm:p-8">
-  <div class="max-w-4xl mx-auto">
+  <div class="max-w-4xl mx-auto relative">
+    <!-- Victory Overlay -->
+    <div *ngIf="hayBingo" class="absolute inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50 rounded-xl animate-fade-in">
+      <h2 class="text-6xl font-bold text-yellow-400 animate-pulse">¡LÍNEA!</h2>
+      <p class="text-2xl text-white mt-4">¡Felicidades al ganador!</p>
+      <button (click)="volverAlLobby()" class="mt-8 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-colors">Jugar de Nuevo</button>
+    </div>
+
     <header class="mb-8">
       <h1 class="text-4xl font-bold text-purple-800 flex items-center gap-3">🎲 Bingo Virtual Educativo</h1>
       <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">

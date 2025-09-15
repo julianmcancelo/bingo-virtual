@@ -374,27 +374,15 @@ export class AppComponent implements OnInit, OnDestroy {
    * Verificar bingo
    */
   verificarBingo(): boolean {
-    // Verificar filas
-    for (let fila = 0; fila < 5; fila++) {
-      if (this.carton[fila].every(celda => celda.marcada)) {
+    if (!this.carton || this.carton.length === 0) return false;
+
+    // Para el bingo argentino, verificamos si se completó una línea (fila)
+    for (let i = 0; i < this.carton.length; i++) {
+      const fila = this.carton[i];
+      const numerosEnFila = fila.filter(celda => celda && celda.numero !== null);
+      if (numerosEnFila.length > 0 && numerosEnFila.every(celda => celda.marcada)) {
         return true;
       }
-    }
-
-    // Verificar columnas
-    for (let columna = 0; columna < 5; columna++) {
-      if (this.carton.every(fila => fila[columna].marcada)) {
-        return true;
-      }
-    }
-
-    // Verificar diagonales
-    if (this.carton.every((fila, index) => fila[index].marcada)) {
-      return true;
-    }
-
-    if (this.carton.every((fila, index) => fila[4 - index].marcada)) {
-      return true;
     }
 
     return false;

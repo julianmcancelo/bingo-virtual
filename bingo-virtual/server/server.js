@@ -251,28 +251,14 @@ function verificarBingoMultijugador(carton, jugadorId, salaId) {
   const sala = salas.get(salaId);
   if (!sala) return { hayBingo: false };
 
-  // Verificar filas
-  for (let i = 0; i < 5; i++) {
-    if (carton[i].every(celda => celda.marcada)) {
-      return { hayBingo: true, tipo: 'fila', linea: i };
+  // Para el bingo argentino, verificamos si se completó una línea (fila)
+  for (let i = 0; i < 3; i++) {
+    // Una fila gana si todas sus celdas con número están marcadas
+    const fila = carton[i];
+    const numerosEnFila = fila.filter(celda => celda.numero !== null);
+    if (numerosEnFila.length > 0 && numerosEnFila.every(celda => celda.marcada)) {
+      return { hayBingo: true, tipo: 'linea', linea: i + 1 };
     }
-  }
-
-  // Verificar columnas
-  for (let j = 0; j < 5; j++) {
-    if (carton.every(fila => fila[j].marcada)) {
-      return { hayBingo: true, tipo: 'columna', linea: j };
-    }
-  }
-
-  // Verificar diagonal principal
-  if (carton.every((fila, i) => fila[i].marcada)) {
-    return { hayBingo: true, tipo: 'diagonal', linea: 'principal' };
-  }
-
-  // Verificar diagonal secundaria
-  if (carton.every((fila, i) => fila[4 - i].marcada)) {
-    return { hayBingo: true, tipo: 'diagonal', linea: 'secundaria' };
   }
 
   return { hayBingo: false };
