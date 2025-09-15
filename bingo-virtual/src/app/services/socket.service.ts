@@ -13,8 +13,9 @@
  */
 
 import { Injectable } from '@angular/core';
+import { io, Socket } from 'socket.io-client';
+import { environment } from '../../environments/environment';
 import { Observable, BehaviorSubject, Subject } from 'rxjs';
-import * as socketIo from 'socket.io-client';
 
 /**
  * INTERFACES PARA TIPADO FUERTE
@@ -71,8 +72,8 @@ export class SocketService {
    * 
    * @description Manejo de estado y conexión Socket.IO
    */
-  private socket: any;
-  private readonly SERVER_URL = 'http://localhost:3000';
+  private socket!: Socket;
+  private readonly SERVER_URL = environment.serverUrl;
   
   // BehaviorSubjects para estado reactivo
   private conectadoSubject = new BehaviorSubject<boolean>(false);
@@ -123,7 +124,7 @@ export class SocketService {
       return;
     }
     console.log('[SOCKET] Intentando conectar a', this.SERVER_URL);
-    this.socket = socketIo.connect(this.SERVER_URL, {
+    this.socket = io(this.SERVER_URL, {
       transports: ['websocket', 'polling'],
       autoConnect: true // Dejamos que se conecte automáticamente al llamar a connect()
     });

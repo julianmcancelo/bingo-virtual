@@ -28,9 +28,22 @@ const app = express();
 const server = http.createServer(app);
 
 // Configuración CORS para permitir conexiones desde Angular
-const io = socketIo(server, {
+const allowedOrigins = [
+  'http://localhost:4200', // Desarrollo local
+  process.env.FRONTEND_URL // URL de producción (se configurará en Render)
+].filter(Boolean); // Filtra valores nulos o undefined
+
+const io = new Server(server, {
   cors: {
-    origin: "http://localhost:4200",
+    origin: (origin, callback) => {
+      // Permite solicitudes sin 'origin' (como apps móviles o Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = 'La política de CORS para este sitio no permite el acceso desde el origen especificado.';
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -526,7 +539,7 @@ app.get('/stats', (req, res) => {
   res.json(stats);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 const showMatrixAnimation = (callback) => {
   console.clear();

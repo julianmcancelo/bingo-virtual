@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Servidor multijugador para Bingo Virtual Educativo - ALED3",
   "main": "server.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "npx kill-port 3000 && node server.js",
     "dev": "nodemon server.js"
