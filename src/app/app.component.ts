@@ -38,6 +38,7 @@ import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 import { environment } from '../environments/environment';
 import { SocketService, Jugador, Sala, MensajeChat, CeldaBingo } from './services/socket.service';
+import { SettingsService, GameSettings } from './services/settings.service';
 import { LobbyComponent } from './components/lobby/lobby.component';
 import { SalaComponent } from './components/sala/sala.component';
 import { JuegoComponent } from './components/juego/juego.component';
@@ -94,6 +95,7 @@ export class AppComponent implements OnInit, OnDestroy {
   
   // Cartón de bingo
   carton: CeldaBingo[][] = [];
+  gameSettings!: GameSettings;
   
   // Estado del juego
   juegoIniciado = false;
@@ -118,6 +120,7 @@ export class AppComponent implements OnInit, OnDestroy {
   
   constructor(
     public socketService: SocketService,
+    private settingsService: SettingsService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     // Inicialización básica sin operaciones pesadas
@@ -573,6 +576,37 @@ export class AppComponent implements OnInit, OnDestroy {
       icon: isConnected ? 'success' : 'error',
       confirmButtonColor: 'var(--itb-accent-blue)',
       confirmButtonText: 'Entendido'
+    });
+  }
+
+    mostrarAjustes(): void {
+    Swal.fire({
+      title: 'Ajustes del Juego',
+      html: `
+        <div class="text-left space-y-4 p-4">
+          <div class="flex items-center justify-between">
+            <label for="swal-marcado-automatico" class="text-gray-700 font-medium">Marcado Automático</label>
+            <input type="checkbox" id="swal-marcado-automatico" class="swal2-checkbox h-6 w-6 text-blue-600" ${this.gameSettings.marcadoAutomatico ? 'checked' : ''}>
+          </div>
+          <div class="flex items-center justify-between">
+            <label for="swal-narrador" class="text-gray-700 font-medium">Habilitar Narrador</label>
+            <input type="checkbox" id="swal-narrador" class="swal2-checkbox h-6 w-6" ${this.gameSettings.narradorHabilitado ? 'checked' : ''}>
+          </div>
+        </div>
+      `,
+      confirmButtonText: 'Guardar Cambios',
+      confirmButtonColor: 'var(--itb-accent-blue)',
+      showCancelButton: true,
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const marcadoAutomatico = (document.getElementById('swal-marcado-automatico') as HTMLInputElement).checked;
+        const narradorHabilitado = (document.getElementById('swal-narrador') as HTMLInputElement).checked;
+        this.settingsService.updateSettings({ marcadoAutomatico, narradorHabilitado });
+      }
+    }).then(result => {
+      if (result.isConfirmed) {
+        Swal.fire('¡Guardado!', 'Tus ajustes han sido actualizados.', 'success');
+      }
     });
   }
 
