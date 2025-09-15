@@ -78,7 +78,7 @@ import { LoginComponent } from './components/login/login.component';
     JuegoComponent
   ],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'Bingo Virtual Educativo - ALED3';
@@ -95,6 +95,7 @@ export class AppComponent implements OnInit, OnDestroy {
   
   // Cartón de bingo
   carton: CeldaBingo[][] = [];
+  gameSettings!: GameSettings;
   
   // Estado del juego
   juegoIniciado = false;
@@ -115,8 +116,6 @@ export class AppComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
   private synth: SpeechSynthesis | null = null;
   private voices: SpeechSynthesisVoice[] = [];
-  
-  private settingsService: SettingsService;
   
   constructor(
     public socketService: SocketService,
@@ -154,19 +153,6 @@ export class AppComponent implements OnInit, OnDestroy {
    * CONFIGURACIÓN DE SOCKET.IO
    */
   private configurarSocketIO(): void {
-    this.subscriptions.push(
-      // Suscripción a la configuración del juego
-      this.settingsService.settings$.subscribe(settings => {
-        this.gameSettings = settings;
-      })
-    );
-
-    this.subscriptions.push(
-      // Suscripción a la configuración del juego
-      this.settingsService.settings$.subscribe(settings => {
-        this.gameSettings = settings;
-      })
-    );
 
     this.subscriptions.push(
       // Suscripción a la configuración del juego
@@ -584,52 +570,65 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Mostrar notificación al usuario
    */
-    mostrarEstadoServidor(): void {
+  mostrarEstadoServidor(): void {
     const serverUrl = environment.serverUrl;
-    // Usamos los observables públicos directamente en lugar de propiedades locales
     const isConnected = this.socketService.conectado$.getValue();
     const socketId = this.socketService.socketId$.getValue();
 
-    const estadoIcon = isConnected ? '✅' : '❌';
+    const estadoIcon = isConnected ? 'wifi' : 'wifi_off';
     const estadoTexto = isConnected ? 'Conectado' : 'Desconectado';
-    const estadoColor = isConnected ? 'text-green-600' : 'text-red-600';
+    const estadoColor = isConnected ? 'text-green-500' : 'text-red-500';
+    const iconColor = isConnected ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600';
 
     Swal.fire({
       title: 'Estado de la Conexión',
       html: `
-        <div class="text-left text-gray-700 space-y-3 p-4 border rounded-lg bg-gray-50">
-          <div class="flex justify-between items-center">
-            <span class="font-semibold">Estado:</span>
-            <span class="font-bold ${estadoColor}">${estadoIcon} ${estadoTexto}</span>
+        <div class="text-left text-gray-800 space-y-3 p-2">
+          <div class="p-4 border rounded-lg bg-gray-50 shadow-sm flex items-center gap-4">
+            <div class="p-2 rounded-full ${iconColor}">
+              <mat-icon class="material-icons-outlined">${estadoIcon}</mat-icon>
+            </div>
+            <div>
+              <p class="font-semibold">Estado</p>
+              <p class="font-bold text-lg ${estadoColor}">${estadoTexto}</p>
+            </div>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="font-semibold">Servidor:</span>
-            <span class="text-sm font-mono bg-gray-200 px-2 py-1 rounded">${serverUrl}</span>
+          <div class="p-4 border rounded-lg bg-gray-50 shadow-sm">
+            <p class="font-semibold mb-1">Servidor</p>
+            <p class="text-sm font-mono bg-gray-200 px-2 py-1 rounded break-all">${serverUrl}</p>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="font-semibold">ID de Sesión:</span>
-            <span class="text-xs font-mono bg-gray-200 px-2 py-1 rounded">${socketId || 'N/A'}</span>
+          <div class="p-4 border rounded-lg bg-gray-50 shadow-sm">
+            <p class="font-semibold mb-1">ID de Sesión</p>
+            <p class="text-xs font-mono bg-gray-200 px-2 py-1 rounded break-all">${socketId || 'N/A'}</p>
           </div>
         </div>
       `,
-      icon: isConnected ? 'success' : 'error',
-      confirmButtonColor: 'var(--itb-accent-blue)',
-      confirmButtonText: 'Entendido'
+      showConfirmButton: false,
+      showCloseButton: true
     });
   }
 
-    mostrarAjustes(): void {
+      mostrarAjustes(): void {
     Swal.fire({
       title: 'Ajustes del Juego',
       html: `
-        <div class="text-left space-y-4 p-4">
-          <div class="flex items-center justify-between">
-            <label for="swal-marcado-automatico" class="text-gray-700 font-medium">Marcado Automático</label>
-            <input type="checkbox" id="swal-marcado-automatico" class="swal2-checkbox h-6 w-6 text-blue-600" ${this.gameSettings.marcadoAutomatico ? 'checked' : ''}>
+        <div class="text-left space-y-4 p-2">
+          <!-- Marcado Automático -->
+          <div class="p-4 border rounded-lg bg-gray-50 shadow-sm">
+            <div class="flex items-center justify-between">
+              <label for="swal-marcado-automatico" class="font-semibold text-gray-800">Marcado Automático</label>
+              <input type="checkbox" id="swal-marcado-automatico" class="swal2-checkbox h-6 w-6 text-blue-600 focus:ring-blue-500" ${this.gameSettings.marcadoAutomatico ? 'checked' : ''}>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">Si está activado, los números de tu cartón se marcarán solos cuando salgan sorteados.</p>
           </div>
-          <div class="flex items-center justify-between">
-            <label for="swal-narrador" class="text-gray-700 font-medium">Habilitar Narrador</label>
-            <input type="checkbox" id="swal-narrador" class="swal2-checkbox h-6 w-6" ${this.gameSettings.narradorHabilitado ? 'checked' : ''}>
+
+          <!-- Narrador -->
+          <div class="p-4 border rounded-lg bg-gray-50 shadow-sm">
+            <div class="flex items-center justify-between">
+              <label for="swal-narrador" class="font-semibold text-gray-800">Habilitar Narrador</label>
+              <input type="checkbox" id="swal-narrador" class="swal2-checkbox h-6 w-6 text-blue-600 focus:ring-blue-500" ${this.gameSettings.narradorHabilitado ? 'checked' : ''}>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">Activa una voz que anunciará los números a medida que se sortean.</p>
           </div>
         </div>
       `,
@@ -644,7 +643,13 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }).then(result => {
       if (result.isConfirmed) {
-        Swal.fire('¡Guardado!', 'Tus ajustes han sido actualizados.', 'success');
+        Swal.fire({ 
+          title: '¡Guardado!', 
+          text: 'Tus ajustes han sido actualizados.', 
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
       }
     });
   }
@@ -653,10 +658,10 @@ export class AppComponent implements OnInit, OnDestroy {
     Swal.fire({
       title: 'Bingo Virtual Educativo',
       html: `
-        <div class="text-left text-gray-700 space-y-5 p-2">
+        <div class="text-left text-gray-800 space-y-4 p-2">
 
           <!-- Cátedra -->
-          <div class="p-3 border rounded-lg bg-gray-50">
+          <div class="p-4 border rounded-lg bg-gray-50 shadow-sm">
             <h3 class="font-semibold text-lg text-[var(--itb-dark-blue)] flex items-center gap-2 mb-2">
               <span class="text-xl">🎓</span> Cátedra
             </h3>
@@ -665,7 +670,7 @@ export class AppComponent implements OnInit, OnDestroy {
           </div>
 
           <!-- Equipo -->
-          <div class="p-3 border rounded-lg bg-gray-50">
+          <div class="p-4 border rounded-lg bg-gray-50 shadow-sm">
             <h3 class="font-semibold text-lg text-[var(--itb-dark-blue)] flex items-center gap-2 mb-2">
               <span class="text-xl">👨‍💻</span> Equipo de Desarrollo
             </h3>
@@ -673,7 +678,7 @@ export class AppComponent implements OnInit, OnDestroy {
           </div>
 
           <!-- Tecnologías -->
-          <div class="p-3 border rounded-lg bg-gray-50">
+          <div class="p-4 border rounded-lg bg-gray-50 shadow-sm">
             <h3 class="font-semibold text-lg text-[var(--itb-dark-blue)] flex items-center gap-2 mb-2">
               <span class="text-xl">🛠️</span> Stack Tecnológico
             </h3>
@@ -682,16 +687,15 @@ export class AppComponent implements OnInit, OnDestroy {
               <li><strong>Backend:</strong> Node.js, Express, Socket.IO</li>
               <li><strong>Estilos:</strong> Tailwind CSS & Angular Material</li>
               <li><strong>Alertas:</strong> SweetAlert2</li>
-              <li><strong>DevOps:</strong> Concurrently (para ejecución paralela)</li>
+              <li><strong>DevOps:</strong> Concurrently</li>
             </ul>
           </div>
 
         </div>
       `,
       width: '550px',
-      showCloseButton: true,
-      confirmButtonColor: 'var(--itb-accent-blue)',
-      confirmButtonText: 'Cerrar'
+      showConfirmButton: false,
+      showCloseButton: true
     });
   }
 

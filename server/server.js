@@ -293,6 +293,11 @@ io.on('connection', (socket) => {
    */
   socket.on('crearSala', (data) => {
     const { nombreSala, nombreJugador } = data;
+
+    if (!nombreJugador || nombreJugador.trim().length < 3) {
+      return socket.emit('error', { mensaje: 'El nombre de jugador debe tener al menos 3 caracteres.' });
+    }
+
     const sala = crearSala(nombreSala);
     
     const jugador = {
@@ -335,6 +340,11 @@ io.on('connection', (socket) => {
     if (!sala) {
       socket.emit('error', { mensaje: 'Sala no encontrada' });
       return;
+    }
+
+        const nombreExistente = sala.jugadores.find(j => j.nombre.toLowerCase() === nombreJugador.toLowerCase());
+    if (nombreExistente) {
+      return socket.emit('error', { mensaje: `El nombre '${nombreJugador}' ya está en uso en esta sala.` });
     }
 
     if (sala.juegoIniciado) {
@@ -542,7 +552,7 @@ app.get('/stats', (req, res) => {
   res.json(stats);
 });
 
-const PORT = process.env.PORT;
+const PORT = 3000;
 
 const showMatrixAnimation = (callback) => {
   console.clear();
