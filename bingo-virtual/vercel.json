@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "dist/bingo-virtual/browser/**",
+          "dist/bingo-virtual/server/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/assets/(.*)", "dest": "/dist/bingo-virtual/browser/assets/$1" },
+    { "src": "/(.*)", "dest": "dist/bingo-virtual/server/server.mjs" }
+  ]
+}
