@@ -493,34 +493,46 @@ const PORT = process.env.PORT || 3000;
 
 const showMatrixAnimation = (callback) => {
   console.clear();
-  const characters = '01';
+  const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+  const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const nums = '0123456789';
+  const characters = katakana + latin + nums;
   const specialWords = ['BINGO', 'ALED3', 'CANCELO', 'OTERO', 'SALDIVAR'];
-  const colors = [chalk.green, chalk.bold.green, chalk.hex('#008F11')];
-  const highlightColor = chalk.bold.white;
+  const highlightColor = chalk.bold.hex('#39FF14'); // Lime green
+
+  let columns = Array(process.stdout.columns).fill(1);
 
   const stream = () => {
-    let line = '';
-    for (let i = 0; i < process.stdout.columns; i++) {
-        if (Math.random() > 0.992 && i + 10 < process.stdout.columns) {
-            const word = specialWords[Math.floor(Math.random() * specialWords.length)];
-            line += highlightColor(word);
-            i += word.length -1;
-        } else {
-            const char = characters[Math.floor(Math.random() * characters.length)];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            line += color(char);
-        }
+    process.stdout.write('\x1b[2J\x1b[H'); // Clear screen
+    columns.forEach((y, index) => {
+      const char = characters[Math.floor(Math.random() * characters.length)];
+      const color = Math.random() > 0.9 ? chalk.white : chalk.green;
+      process.stdout.cursorTo(index, y);
+      process.stdout.write(color(char));
+
+      if (y > process.stdout.rows) {
+        columns[index] = 1;
+      } else {
+        columns[index] = y + 1;
+      }
+    });
+    // Inject special words
+    if (Math.random() > 0.95) {
+      const word = specialWords[Math.floor(Math.random() * specialWords.length)];
+      const x = Math.floor(Math.random() * (process.stdout.columns - word.length));
+      const y = Math.floor(Math.random() * process.stdout.rows);
+      process.stdout.cursorTo(x, y);
+      process.stdout.write(highlightColor(word));
     }
-    console.log(line.substring(0, process.stdout.columns));
   };
 
-  const animation = setInterval(stream, 75);
+  const animation = setInterval(stream, 80);
 
   setTimeout(() => {
     clearInterval(animation);
     console.clear();
     callback();
-  }, 4000); // Duración de la animación: 4 segundos
+  }, 5000); // Duración de la animación: 5 segundos
 };
 
 server.listen(PORT, () => {

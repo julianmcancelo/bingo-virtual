@@ -1,0 +1,39 @@
+<div class="bg-white p-8 rounded-xl shadow-lg animate-fade-in">
+  <h2 class="text-2xl font-bold text-gray-800 mb-2">🚪 Sala: {{ salaActual?.nombre }}</h2>
+  <p class="text-sm text-gray-500 mb-6">ID de la Sala: <code class="bg-gray-200 text-purple-800 font-mono px-2 py-1 rounded">{{ salaActual?.id }}</code> (¡Compártelo!)</p>
+  
+  <div class="flex flex-col md:flex-row gap-8">
+    <!-- Players List -->
+    <div class="md:w-1/3">
+      <h4 class="text-lg font-semibold mb-3">👥 Jugadores ({{ jugadores.length }})</h4>
+      <ul class="space-y-2">
+        <li *ngFor="let jugador of jugadores; let i = index" class="bg-gray-50 p-3 rounded-lg flex items-center gap-3">
+          <span class="text-xl">{{ i === 0 ? '👑' : '👤' }}</span>
+          <span class="font-medium text-gray-700">{{ jugador.nombre }}</span>
+        </li>
+      </ul>
+      <button *ngIf="puedeIniciarJuego" (click)="onIniciarJuego()" class="mt-4 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200">
+        🚀 Iniciar Juego
+      </button>
+    </div>
+    
+    <!-- Chat -->
+    <div class="md:w-2/3">
+      <h4 class="text-lg font-semibold mb-3">💬 Chat de la Sala</h4>
+      <div class="h-48 overflow-y-auto border rounded-lg p-3 bg-gray-50 space-y-2">
+        <div *ngFor="let msg of mensajesChat" class="text-sm">
+          <span class="text-gray-500">[{{ formatearTiempo(msg.timestamp) }}]</span> 
+          <strong class="text-purple-700">{{ msg.jugador }}:</strong> 
+          <span class="text-gray-800">{{ msg.mensaje }}</span>
+        </div>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <textarea [(ngModel)]="nuevoMensaje" (keydown)="onEnterChat($event)" placeholder="Escribe un mensaje..." class="flex-grow block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"></textarea>
+        <button (click)="onEnviarMensaje()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-6">
+  <button (click)="onVolverAlLobby()" class="text-sm text-red-600 hover:text-red-800 font-medium transition-colors duration-200">← Volver al Lobby</button>
+</div>

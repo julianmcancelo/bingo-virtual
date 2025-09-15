@@ -1,0 +1,48 @@
+<div class="bg-white p-8 rounded-xl shadow-lg animate-fade-in">
+  <div class="text-center mb-6">
+    <h2 class="text-3xl font-bold text-gray-800">🎯 ¡A Jugar al Bingo! 🎯</h2>
+    <p class="text-gray-600">Jugador: <span class="font-semibold text-purple-700">{{ jugadorActual?.nombre }}</span></p>
+  </div>
+
+  <!-- Called Number Display -->
+  <div class="text-center my-8">
+    <p class="text-lg text-gray-500">Número Sorteado</p>
+    <div class="inline-block bg-purple-600 text-white rounded-full w-24 h-24 flex items-center justify-center text-5xl font-bold shadow-lg animate-pulse">
+      {{ numeroActual || '...' }}
+    </div>
+  </div>
+
+  <!-- Bingo Card -->
+  <div class="grid grid-cols-5 gap-1 md:gap-2 max-w-sm mx-auto bg-gray-200 p-2 rounded-lg">
+    <div *ngFor="let letra of ['B', 'I', 'N', 'G', 'O']" class="text-center font-bold text-xl text-purple-800">{{ letra }}</div>
+    <ng-container *ngFor="let fila of carton; let i = index">
+      <button *ngFor="let celda of fila; let j = index"
+              (click)="onToggleCelda(i, j)"
+              [ngClass]="{
+                'bg-purple-200 text-purple-800 ring-2 ring-purple-500': celda.marcada,
+                'bg-white hover:bg-purple-50': !celda.marcada,
+                'bg-yellow-400 text-white': celda.esLibre,
+                'cursor-not-allowed opacity-50': !numeroDisponible(celda.numero) && !celda.esLibre && !celda.marcada
+              }"
+              class="aspect-square flex items-center justify-center text-lg md:text-2xl font-bold rounded-md shadow-sm transition-all duration-200">
+        <span *ngIf="!celda.esLibre">{{ celda.numero }}</span>
+        <span *ngIf="celda.esLibre" class="text-2xl">★</span>
+      </button>
+    </ng-container>
+  </div>
+
+  <!-- Called Numbers History Board -->
+  <div class="mt-8">
+    <h3 class="text-lg font-semibold text-center text-gray-700 mb-3">Números Sorteados</h3>
+    <div class="grid grid-cols-15 gap-1 text-center text-xs p-2 bg-gray-100 rounded-lg">
+      <div *ngFor="let n of [].constructor(75); let i = index"
+           [ngClass]="{
+             'bg-purple-500 text-white font-bold': numerosSorteados.includes(i + 1),
+             'bg-white': !numerosSorteados.includes(i + 1)
+           }"
+           class="w-6 h-6 flex items-center justify-center rounded-full shadow-sm">
+        {{ i + 1 }}
+      </div>
+    </div>
+  </div>
+</div>

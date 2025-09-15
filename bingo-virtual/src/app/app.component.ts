@@ -36,6 +36,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatStepperModule } from '@angular/material/stepper';
 import { Subscription } from 'rxjs';
 import { SocketService, Jugador, Sala, MensajeChat, CeldaBingo } from './services/socket.service';
+import { LobbyComponent } from './components/lobby/lobby.component';
+import { SalaComponent } from './components/sala/sala.component';
+import { JuegoComponent } from './components/juego/juego.component';
 
 @Component({
   selector: 'app-root',
@@ -64,7 +67,10 @@ import { SocketService, Jugador, Sala, MensajeChat, CeldaBingo } from './service
     MatRippleModule,
     MatSlideToggleModule,
     MatMenuModule,
-    MatStepperModule
+    MatStepperModule,
+    LobbyComponent,
+    SalaComponent,
+    JuegoComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
@@ -79,8 +85,6 @@ export class AppComponent implements OnInit, OnDestroy {
   
   // Estados básicos
   vistaActual = 'lobby';
-  nombreJugador = '';
-  nombreSala = '';
   salaIdUnirse = '';
   
   // Cartón de bingo
@@ -100,7 +104,6 @@ export class AppComponent implements OnInit, OnDestroy {
   
   // Chat
   mensajesChat: MensajeChat[] = [];
-  nuevoMensaje = '';
   
   // Subscripciones
   private subscriptions: Subscription[] = [];
@@ -227,25 +230,21 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Crear nueva sala de juego
    */
-  crearSala(): void {
-    if (!this.nombreSala.trim() || !this.nombreJugador.trim()) {
-      alert('Por favor, completa todos los campos');
-      return;
-    }
-    
-    this.socketService.crearSala(this.nombreSala, this.nombreJugador);
+  crearSala(event: { nombreSala: string, nombreJugador: string }): void {
+    this.socketService.crearSala(event.nombreSala, event.nombreJugador);
   }
 
   /**
    * Unirse a sala existente
    */
   unirseASala(): void {
-    if (!this.nombreJugador.trim() || !this.salaIdUnirse.trim()) {
-      alert('Por favor, completa todos los campos');
-      return;
-    }
+    // TODO: Esta lógica se moverá al LobbyComponent
+    // if (!this.nombreJugador.trim() || !this.salaIdUnirse.trim()) {
+    //   alert('Por favor, completa todos los campos');
+    //   return;
+    // }
     
-    this.socketService.unirseASala(this.salaIdUnirse, this.nombreJugador);
+    // this.socketService.unirseASala(this.salaIdUnirse, this.nombreJugador);
   }
 
   /**
@@ -271,7 +270,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.numerosSorteados = [];
     this.totalSorteados = 0;
     this.mensajesChat = [];
-    this.nuevoMensaje = '';
     this.socketService.limpiarEstado();
   }
 
@@ -335,7 +333,8 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Marcar/desmarcar celda del cartón
    */
-  toggleCelda(fila: number, columna: number): void {
+  toggleCelda(event: { fila: number, columna: number }): void {
+    const { fila, columna } = event;
     if (!this.juegoIniciado || !this.carton[fila] || !this.carton[fila][columna] || this.carton[fila][columna].esLibre) {
       return;
     }
@@ -363,9 +362,6 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Verificar si un número está disponible para marcar
    */
-  numeroDisponible(numero: number): boolean {
-    return this.numerosSorteados.includes(numero);
-  }
 
   /**
    * Verificar si es el número actual
@@ -438,24 +434,16 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Enviar mensaje de chat
    */
-  enviarMensaje(): void {
-    if (!this.nuevoMensaje.trim() || !this.salaActual || !this.jugadorActual) {
+  enviarMensaje(mensaje: string): void {
+    if (!mensaje.trim() || !this.salaActual || !this.jugadorActual) {
       return;
     }
-
-    this.socketService.enviarMensaje(this.salaActual.id, this.jugadorActual.id, this.nuevoMensaje);
-    this.nuevoMensaje = '';
+    this.socketService.enviarMensaje(this.salaActual.id, this.jugadorActual.id, mensaje);
   }
 
   /**
    * Manejar Enter en chat
    */
-  onEnterChat(event: KeyboardEvent): void {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      this.enviarMensaje();
-    }
-  }
 
   /**
    * MÉTODOS AUXILIARES
@@ -471,9 +459,6 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Formatear tiempo
    */
-  formatearTiempo(fecha: Date): string {
-    return fecha.toLocaleTimeString();
-  }
 
   /**
    * GETTERS
@@ -503,9 +488,6 @@ export class AppComponent implements OnInit, OnDestroy {
     return count;
   }
 
-  get puedeIniciarJuego(): boolean {
-    return this.esCreadorSala && this.jugadores.length >= 1 && !this.juegoIniciado;
-  }
 
   /**
    * Suscribirse a mensajes de chat
@@ -551,8 +533,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private reiniciarEstadoLocal(): void {
-    this.nombreJugador = '';
-    this.nombreSala = '';
     this.salaIdUnirse = '';
     this.juegoIniciado = false;
     this.hayBingo = false;
@@ -560,7 +540,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.numerosSorteados = [];
     this.totalSorteados = 0;
     this.mensajesChat = [];
-    this.nuevoMensaje = '';
     this.generarCarton();
   }
 
