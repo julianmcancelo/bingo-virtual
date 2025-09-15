@@ -117,7 +117,7 @@ export class AppComponent implements OnInit, OnDestroy {
   
   
   constructor(
-    private socketService: SocketService,
+    public socketService: SocketService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     // Inicialización básica sin operaciones pesadas
@@ -151,12 +151,9 @@ export class AppComponent implements OnInit, OnDestroy {
    * CONFIGURACIÓN DE SOCKET.IO
    */
   private configurarSocketIO(): void {
-    // Suscribirse al estado de conexión
-    this.s$.subscribe(estado => {
-        // La lógica se manejará directamente en la plantilla con el pipe async
-        console.log('Nuevo estado de conexión:', estado);
-      })
-    );
+    // Las suscripciones para el estado de la conexión y el socketId se manejarán
+    // directamente en la plantilla con el pipe async o se leerán con getValue() en el modal.
+    // Mantenemos las suscripciones que sí ejecutan lógica en el componente.
 
     // Suscribirse a eventos de sala
     this.subscriptions.push(
@@ -545,12 +542,16 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Mostrar notificación al usuario
    */
-        mostrarEstadoServidor(): void {
+    mostrarEstadoServidor(): void {
     const serverUrl = environment.serverUrl;
-    const estadoIcon = this.estaConectado ? '✅' : '❌';
-    const estadoTexto = this.estaConectado ? 'Conectado' : 'Desconectado';
-    const estadoColor = this.estaConectado ? 'text-green-600' : 'text-red-600';
-    
+    // Usamos los observables públicos directamente en lugar de propiedades locales
+    const isConnected = this.socketService.conectado$.getValue();
+    const socketId = this.socketService.socketId$.getValue();
+
+    const estadoIcon = isConnected ? '✅' : '❌';
+    const estadoTexto = isConnected ? 'Conectado' : 'Desconectado';
+    const estadoColor = isConnected ? 'text-green-600' : 'text-red-600';
+
     Swal.fire({
       title: 'Estado de la Conexión',
       html: `
@@ -565,17 +566,17 @@ export class AppComponent implements OnInit, OnDestroy {
           </div>
           <div class="flex justify-between items-center">
             <span class="font-semibold">ID de Sesión:</span>
-            <span class="text-xs font-mono bg-gray-200 px-2 py-1 rounded">${this.socketId || 'N/A'}</span>
+            <span class="text-xs font-mono bg-gray-200 px-2 py-1 rounded">${socketId || 'N/A'}</span>
           </div>
         </div>
       `,
-      icon: this.estaConectado ? 'success' : 'error',
+      icon: isConnected ? 'success' : 'error',
       confirmButtonColor: 'var(--itb-accent-blue)',
       confirmButtonText: 'Entendido'
     });
   }
 
-    mostrarInfoProyecto(): void {
+  mostrarInfoProyecto(): void {
     Swal.fire({
       title: 'Bingo Virtual Educativo',
       html: `

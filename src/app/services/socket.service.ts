@@ -94,8 +94,8 @@ export class SocketService {
    * 
    * @description Expone streams de datos para componentes
    */
-  public conectado$ = this.conectadoSubject.asObservable();
-  public socketId$ = this.socketIdSubject.asObservable();
+  public conectado$ = this.conectadoSubject;
+  public socketId$ = this.socketIdSubject;
   public salaActual$ = this.salaActualSubject.asObservable();
   public jugadorActual$ = this.jugadorActualSubject.asObservable();
   public jugadores$ = this.jugadoresSubject.asObservable();
