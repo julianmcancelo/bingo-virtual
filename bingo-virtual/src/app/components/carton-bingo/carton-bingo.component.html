@@ -1,0 +1,18 @@
+<div class="relative bg-white rounded-lg shadow-lg border-2 border-red-500 p-2 font-sans">
+  <img src="/img/logo.png" alt="logo" class="absolute top-1 left-1 w-8 h-8">
+  <table class="w-full border-collapse">
+    <tbody>
+      <tr *ngFor="let fila of carton">
+        <td *ngFor="let numero of fila" 
+            [ngClass]="{
+              'bg-red-500 text-white': false, 
+              'bg-white': numero !== null,
+              'bg-transparent border-none': numero === null
+            }"
+            class="w-1/9 text-center h-16 border border-gray-300 text-2xl font-bold">
+          {{ numero }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

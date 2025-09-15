@@ -1,9 +1,9 @@
+/* Angular Material Theme */
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Angular Material Theme */
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 /* Variables de Colores Simples */
 :root {

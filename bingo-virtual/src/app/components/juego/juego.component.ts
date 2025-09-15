@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Jugador, CeldaBingo } from '../../services/socket.service';
+import { CartonBingoComponent } from '../carton-bingo/carton-bingo.component';
 
 @Component({
   selector: 'app-juego',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CartonBingoComponent],
   templateUrl: './juego.component.html',
   styleUrls: ['./juego.component.css']
 })
