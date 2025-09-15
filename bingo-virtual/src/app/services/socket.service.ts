@@ -77,6 +77,7 @@ export class SocketService {
   
   // BehaviorSubjects para estado reactivo
   private conectadoSubject = new BehaviorSubject<boolean>(false);
+  private socketIdSubject = new BehaviorSubject<string | null>(null);
   private salaActualSubject = new BehaviorSubject<Sala | null>(null);
   private jugadorActualSubject = new BehaviorSubject<Jugador | null>(null);
   private jugadoresSubject = new BehaviorSubject<Jugador[]>([]);
@@ -94,6 +95,7 @@ export class SocketService {
    * @description Expone streams de datos para componentes
    */
   public conectado$ = this.conectadoSubject.asObservable();
+  public socketId$ = this.socketIdSubject.asObservable();
   public salaActual$ = this.salaActualSubject.asObservable();
   public jugadorActual$ = this.jugadorActualSubject.asObservable();
   public jugadores$ = this.jugadoresSubject.asObservable();
@@ -138,12 +140,14 @@ export class SocketService {
     this.socket.on('connect', () => {
       console.log('[SOCKET] Conectado al servidor:', this.socket.id);
       this.conectadoSubject.next(true);
+    this.socketIdSubject.next(this.socket.id ?? null);
     });
 
     // Evento de desconexión
     this.socket.on('disconnect', (reason: any) => {
       console.log('[SOCKET] Desconectado:', reason);
       this.conectadoSubject.next(false);
+    this.socketIdSubject.next(null);
     });
 
     // Eventos de sala

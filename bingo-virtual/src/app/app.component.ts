@@ -36,6 +36,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatStepperModule } from '@angular/material/stepper';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
+import { environment } from '../environments/environment';
 import { SocketService, Jugador, Sala, MensajeChat, CeldaBingo } from './services/socket.service';
 import { LobbyComponent } from './components/lobby/lobby.component';
 import { SalaComponent } from './components/sala/sala.component';
@@ -152,8 +153,12 @@ export class AppComponent implements OnInit, OnDestroy {
   private configurarSocketIO(): void {
     // Suscribirse al estado de conexión
     this.subscriptions.push(
-      this.socketService.conectado$.subscribe(conectado => {
-        console.log('Estado de conexión:', conectado);
+      this.socketService.conectado$.subscribe(estado => {
+        this.estaConectado = estado;
+        console.log('Estado de conexión:', this.estaConectado);
+      }),
+      this.socketService.socketId$.subscribe(id => {
+        this.socketId = id;
       })
     );
 
@@ -544,24 +549,34 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Mostrar notificación al usuario
    */
-      mostrarEstadoServidor(): void {
-    if (this.estaConectado) {
-      Swal.fire({
-        title: 'Estado del Servidor',
-        text: 'La conexión con el servidor está activa y funcionando correctamente.',
-        icon: 'success',
-        confirmButtonColor: 'var(--itb-accent-blue)',
-        confirmButtonText: '¡Excelente!'
-      });
-    } else {
-      Swal.fire({
-        title: 'Estado del Servidor',
-        text: 'No se pudo establecer conexión con el servidor. Por favor, intenta recargar la página.',
-        icon: 'error',
-        confirmButtonColor: 'var(--itb-accent-blue)',
-        confirmButtonText: 'Entendido'
-      });
-    }
+        mostrarEstadoServidor(): void {
+    const serverUrl = environment.serverUrl;
+    const estadoIcon = this.estaConectado ? '✅' : '❌';
+    const estadoTexto = this.estaConectado ? 'Conectado' : 'Desconectado';
+    const estadoColor = this.estaConectado ? 'text-green-600' : 'text-red-600';
+    
+    Swal.fire({
+      title: 'Estado de la Conexión',
+      html: `
+        <div class="text-left text-gray-700 space-y-3 p-4 border rounded-lg bg-gray-50">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold">Estado:</span>
+            <span class="font-bold ${estadoColor}">${estadoIcon} ${estadoTexto}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold">Servidor:</span>
+            <span class="text-sm font-mono bg-gray-200 px-2 py-1 rounded">${serverUrl}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold">ID de Sesión:</span>
+            <span class="text-xs font-mono bg-gray-200 px-2 py-1 rounded">${this.socketId || 'N/A'}</span>
+          </div>
+        </div>
+      `,
+      icon: this.estaConectado ? 'success' : 'error',
+      confirmButtonColor: 'var(--itb-accent-blue)',
+      confirmButtonText: 'Entendido'
+    });
   }
 
     mostrarInfoProyecto(): void {
