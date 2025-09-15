@@ -28,10 +28,13 @@ const app = express();
 const server = http.createServer(app);
 
 // Configuración CORS para permitir conexiones desde Angular
-const allowedOrigins = [
-  'http://localhost:4200', // Desarrollo local
-  process.env.FRONTEND_URL // URL de producción (se configurará en Render)
-].filter(Boolean); // Filtra valores nulos o undefined
+const allowedOrigins = ['https://bingo-aled3.vercel.app'];
+
+if (process.env.FRONTEND_URL) {
+  // Eliminar la barra final si existe para evitar errores de CORS
+  const frontendUrl = process.env.FRONTEND_URL.replace(/\/$/, '');
+  allowedOrigins.push(frontendUrl);
+}
 
 const io = new Server(server, {
   cors: {
