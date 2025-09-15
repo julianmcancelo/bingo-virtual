@@ -1,0 +1,238 @@
+/**
+ * ESTILOS WORDPRESS-INSPIRED MATERIAL DESIGN PARA BINGO VIRTUAL
+ * 
+ * @authors Julián Manuel Cancelo & Nicolás Otero
+ * @materia Algoritmos y Estructuras de Datos III (ALED3)
+ * @profesor Sebastián Saldivar
+ * @descripcion Estilos CSS con WordPress Material Design para bingo virtual
+ */
+
+:root {
+  /* WordPress-inspired color palette */
+  --wp-primary: #0073aa;
+  --wp-primary-dark: #005177;
+  --wp-secondary: #00a0d2;
+  --wp-accent: #e74c3c;
+  --wp-success: #46b450;
+  --wp-warning: #ffb900;
+  --wp-gray-100: #f1f1f1;
+  --wp-gray-200: #e1e1e1;
+  --wp-gray-300: #ccd0d4;
+  --wp-gray-400: #a2aab2;
+  --wp-gray-500: #8c8f94;
+  --wp-gray-600: #646970;
+  --wp-gray-700: #50575e;
+  --wp-gray-800: #3c434a;
+  --wp-gray-900: #1d2327;
+  --wp-white: #ffffff;
+  
+  /* Bingo-specific colors */
+  --bingo-marked: var(--wp-success);
+  --bingo-available: var(--wp-warning);
+  --bingo-current: var(--wp-accent);
+  --bingo-free: #8b5cf6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* WordPress-inspired Material Design styles */
+.wp-admin-layout {
+  min-height: 100vh;
+  background-color: var(--wp-gray-100);
+}
+
+.wp-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-title {
+  margin-left: 16px;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.wp-content-area {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Material Card Enhancements */
+.project-card, .lobby-card, .room-card, .technical-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.action-card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Bingo Game Styles */
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.bingo-row {
+  display: contents;
+}
+
+.bingo-cell {
+  aspect-ratio: 1;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  font-weight: bold;
+  border-radius: 8px !important;
+  transition: all 0.3s ease;
+}
+
+.bingo-cell:hover {
+  transform: scale(1.05);
+}
+
+.bingo-cell.marcada {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
+
+.bingo-cell.libre {
+  background-color: #ff4081 !important;
+  color: white !important;
+}
+
+.bingo-cell.numero-actual {
+  background-color: #ff9800 !important;
+  color: white !important;
+  animation: pulse 1s infinite;
+}
+
+.bingo-cell.disponible {
+  background-color: #2196f3 !important;
+  color: white !important;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Drawn Numbers Grid */
+.drawn-numbers-grid {
+  margin-top: 16px;
+}
+
+.drawn-numbers-grid mat-chip-set {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.drawn-numbers-grid mat-chip {
+  margin: 2px;
+}
+
+/* WordPress-style notifications */
+.wp-notice {
+  padding: 12px 16px;
+  margin: 16px 0;
+  border-left: 4px solid;
+  border-radius: 0 4px 4px 0;
+  background-color: var(--wp-white);
+}
+
+.wp-notice.success {
+  border-color: var(--wp-success);
+  background-color: #d1e7dd;
+  color: #0a3622;
+}
+
+.wp-notice.warning {
+  border-color: var(--wp-warning);
+  background-color: #fff3cd;
+  color: #664d03;
+}
+
+.wp-notice.error {
+  border-color: var(--wp-accent);
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Material Design Button Overrides */
+.mat-mdc-raised-button.mat-primary {
+  background-color: var(--wp-primary) !important;
+  color: var(--wp-white) !important;
+}
+
+.mat-mdc-raised-button.mat-primary:hover {
+  background-color: var(--wp-primary-dark) !important;
+}
+
+.mat-mdc-raised-button.mat-accent {
+  background-color: var(--wp-accent) !important;
+  color: var(--wp-white) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .wp-content-area {
+    padding: 16px;
+  }
+  
+  .bingo-header, .bingo-grid {
+    max-width: 100%;
+  }
+  
+  .bingo-cell {
+    padding: 12px;
+    font-size: 1rem;
+    min-height: 50px;
+  }
+  
+  .bingo-letter {
+    padding: 12px;
+    font-size: 1.2rem;
+  }
+  
+  .action-card {
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bingo-cell {
+    padding: 8px;
+    font-size: 0.9rem;
+    min-height: 45px;
+  }
+  
+  .bingo-letter {
+    padding: 8px;
+    font-size: 1rem;
+  }
+}
