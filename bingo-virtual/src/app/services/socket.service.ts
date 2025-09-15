@@ -72,7 +72,7 @@ export class SocketService {
    * @description Manejo de estado y conexión Socket.IO
    */
   private socket: any;
-  private readonly SERVER_URL = 'http://localhost:3000';
+  private readonly SERVER_URL = 'http://localhost:3001';
   
   // BehaviorSubjects para estado reactivo
   private conectadoSubject = new BehaviorSubject<boolean>(false);
