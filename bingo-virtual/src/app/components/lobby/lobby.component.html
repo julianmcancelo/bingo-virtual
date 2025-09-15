@@ -1,16 +1,46 @@
-<div class="bg-white p-8 rounded-xl shadow-lg animate-fade-in">
-  <h2 class="text-2xl font-bold text-gray-800 mb-6">🏠 Lobby - Crea o únete a una sala</h2>
-  <div class="space-y-4">
-    <div>
-      <label for="playerName" class="block text-sm font-medium text-gray-700">Tu nombre</label>
-      <input id="playerName" [(ngModel)]="nombreJugador" placeholder="Ingresa tu nombre" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
-    </div>
-    <div>
-      <label for="roomName" class="block text-sm font-medium text-gray-700">Nombre de la sala</label>
-      <input id="roomName" [(ngModel)]="nombreSala" placeholder="Mi sala de bingo" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
-    </div>
-  </div>
-  <button (click)="onCrearSala()" class="mt-6 w-full inline-flex justify-center py-3 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200">
-    🎮 Crear Sala
-  </button>
+<div class="w-full max-w-md mx-auto">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center text-[var(--itb-dark-blue)] mb-6">Elige tu Aventura</h2>
+
+  <mat-form-field appearance="outline" class="w-full mb-4">
+    <mat-label>Tu Nombre de Jugador</mat-label>
+    <input matInput [(ngModel)]="nombreJugador" name="nombreJugador" required>
+    <mat-icon matSuffix>badge</mat-icon>
+  </mat-form-field>
+
+  <mat-tab-group animationDuration="500ms" mat-stretch-tabs="false" mat-align-tabs="center">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="mr-2">add_circle_outline</mat-icon>
+        Crear Sala
+      </ng-template>
+      <div class="py-6 space-y-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Nombre de la Sala</mat-label>
+          <input matInput [(ngModel)]="nombreSala" name="nombreSala" required>
+          <mat-icon matSuffix>groups</mat-icon>
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="onCrearSala()" class="w-full py-6 text-base">
+          <mat-icon>add</mat-icon>
+          <span class="ml-2">Crear Nueva Sala</span>
+        </button>
+      </div>
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="mr-2">input</mat-icon>
+        Unirse a Sala
+      </ng-template>
+      <div class="py-6 space-y-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>ID de la Sala</mat-label>
+          <input matInput [(ngModel)]="salaIdUnirse" name="salaIdUnirse" required>
+          <mat-icon matSuffix>vpn_key</mat-icon>
+        </mat-form-field>
+        <button mat-raised-button color="accent" (click)="unirseASala()" class="w-full py-6 text-base">
+          <mat-icon>arrow_forward</mat-icon>
+          <span class="ml-2">Unirse a la Partida</span>
+        </button>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </div>

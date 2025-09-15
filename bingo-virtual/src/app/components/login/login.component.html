@@ -1,0 +1,37 @@
+<div class="w-full max-w-md mx-auto text-center">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center text-[var(--itb-dark-blue)] mb-2">¡Te damos la bienvenida!</h2>
+  <p class="text-center text-gray-600 mb-8">Ingresa como invitado o crea una cuenta para jugar.</p>
+
+  <div class="space-y-4">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Nombre de Invitado</mat-label>
+      <input matInput #nameInput="ngModel" required minlength="3" type="text" id="nombreJugador" [(ngModel)]="nombreJugador" name="nombreJugador" placeholder="Ej: SuperJugador123">
+      <mat-icon matSuffix>person</mat-icon>
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" (click)="iniciarComoInvitado()" [disabled]="!nameInput.valid" class="w-full py-6 text-base">
+      <mat-icon>play_arrow</mat-icon>
+      <span class="ml-2">Iniciar como Invitado</span>
+    </button>
+
+    <div class="relative my-4">
+        <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-200"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white/80 backdrop-blur-sm text-gray-500">O inicia sesión</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <button mat-stroked-button (click)="proximamente()" class="w-full py-5">
+        <mat-icon>login</mat-icon>
+        <span class="ml-2">Iniciar Sesión</span>
+      </button>
+      <button mat-stroked-button (click)="proximamente()" class="w-full py-5">
+        <mat-icon>person_add</mat-icon>
+        <span class="ml-2">Registrarse</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,53 +1,72 @@
-<div class="bg-gray-100 min-h-screen font-sans p-4 sm:p-8">
-  <div class="max-w-4xl mx-auto relative">
-    <!-- Victory Overlay -->
-    <div *ngIf="hayBingo" class="absolute inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center z-50 rounded-xl animate-fade-in">
-      <h2 class="text-6xl font-bold text-yellow-400 animate-pulse">¡LÍNEA!</h2>
-      <p class="text-2xl text-white mt-4">¡Felicidades al ganador!</p>
-      <button (click)="volverAlLobby()" class="mt-8 px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-colors">Jugar de Nuevo</button>
-    </div>
-
-    <header class="mb-8">
-      <h1 class="text-4xl font-bold text-purple-800 flex items-center gap-3">🎲 Bingo Virtual Educativo</h1>
-      <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
-        <p><strong>Estado:</strong> <span class="text-green-600 font-semibold">Funcionando</span></p>
+<div class="min-h-screen bg-[var(--background-light-gray)] flex flex-col">
+  <!-- Header -->
+  <header class="bg-[var(--itb-dark-blue)] text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div class="flex items-center gap-4">
+        <img src="assets/img/logo.png" alt="Logo" class="h-10 w-auto">
+        <h1 class="text-xl sm:text-2xl font-bold hidden sm:block">Bingo Virtual Educativo</h1>
+      </div>
+      <div class="flex items-center gap-4 text-xs sm:text-sm">
         <p><strong>Conexión:</strong> 
-          <span [ngClass]="{'text-green-600': estaConectado, 'text-red-600': !estaConectado}" class="font-semibold">
-            {{ estaConectado ? '✅ Conectado' : '❌ Desconectado' }}
+          <span [ngClass]="{'text-green-400': estaConectado, 'text-red-400': !estaConectado}" class="font-semibold flex items-center gap-1">
+            <span class="hidden sm:inline">{{ estaConectado ? 'Conectado' : 'Desconectado' }}</span>
+            <span class="sm:hidden">{{ estaConectado ? '✅' : '❌' }}</span>
           </span>
         </p>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <!-- Dynamic View Container -->
-    <ng-container [ngSwitch]="vistaActual">
-      <app-lobby *ngSwitchCase="'lobby'" (crearSalaEvent)="crearSala($event)"></app-lobby>
-      <app-sala *ngSwitchCase="'sala'"
-                [salaActual]="salaActual"
-                [jugadorActual]="jugadorActual"
-                [jugadores]="jugadores"
-                [mensajesChat]="mensajesChat"
-                (iniciarJuegoEvent)="iniciarJuegoMultijugador()"
-                (enviarMensajeEvent)="enviarMensaje($event)"
-                (volverAlLobbyEvent)="volverAlLobby()">
-      </app-sala>
-      <app-juego *ngSwitchCase="'juego'"
-                 [jugadorActual]="jugadorActual"
-                 [carton]="carton"
-                 [numeroActual]="numeroActual"
-                 [numerosSorteados]="numerosSorteados"
-                 (toggleCeldaEvent)="toggleCelda($event)">
-      </app-juego>
-    </ng-container>
-
-  
-  
-    <footer class="mt-12 text-center text-sm text-gray-500">
-      <div class="max-w-md mx-auto bg-white/60 p-4 rounded-lg shadow-inner backdrop-blur-sm">
-        <h3 class="font-bold text-gray-700 mb-2">📚 Información del Proyecto</h3>
-        <p><strong>Autores:</strong> {{ autores }}</p>
-        <p><strong>Materia:</strong> Algoritmos y Estructuras de Datos III</p>
-        <p><strong>Profesor:</strong> {{ profesor }}</p>
+  <!-- Main Content -->
+  <main class="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div class="w-full max-w-2xl mx-auto relative">
+      <!-- Victory Overlay -->
+      <div *ngIf="hayBingo" class="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center z-50 rounded-xl animate-fade-in">
+        <h2 class="text-6xl font-bold text-[var(--itb-accent-blue)] animate-pulse">¡LÍNEA!</h2>
+        <p class="text-2xl text-white mt-4">¡Felicidades al ganador!</p>
+        <button (click)="volverAlLobby()" class="mt-8 px-6 py-3 bg-[var(--itb-accent-blue)] text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition-colors">Jugar de Nuevo</button>
       </div>
-    </footer>
+
+      <!-- Main Content Card -->
+      <div class="bg-white p-4 sm:p-8 rounded-lg shadow-lg border border-[var(--border-color)] animate-fade-in w-full glow-border">
+        <!-- Dynamic View Container -->
+        <ng-container [ngSwitch]="vistaActual">
+          <app-login *ngSwitchCase="'login'" (loginComoInvitado)="loginComoInvitado($event)"></app-login>
+          <app-lobby *ngSwitchCase="'lobby'" [nombreJugador]="nombreJugadorInvitado" (crearSalaEvent)="crearSala($event)" (unirseASalaEvent)="unirseASala($event)"></app-lobby>
+          <app-sala *ngSwitchCase="'sala'"
+                    [salaActual]="salaActual"
+                    [jugadorActual]="jugadorActual"
+                    [jugadores]="jugadores"
+                    (iniciarJuegoEvent)="iniciarJuegoMultijugador()"
+                    (volverAlLobbyEvent)="volverAlLobby()">
+          </app-sala>
+          <app-juego *ngSwitchCase="'juego'"
+                     [jugadorActual]="jugadorActual"
+                     [carton]="carton"
+                     [numeroActual]="numeroActual"
+                     [numerosSorteados]="numerosSorteados"
+                     (toggleCeldaEvent)="toggleCelda($event)">
+          </app-juego>
+        </ng-container>
+      </div>
+    </div>
+  </main>
+
+  <!-- Floating Action Button with Menu -->
+  <div class="fixed bottom-6 right-6 z-50">
+    <button mat-fab color="primary" [matMenuTriggerFor]="menu" matTooltip="Opciones">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu" xPosition="before">
+      <button mat-menu-item (click)="mostrarInfoProyecto()">
+        <mat-icon>info_outline</mat-icon>
+        <span>Información</span>
+      </button>
+      <button mat-menu-item (click)="mostrarEstadoServidor()">
+        <mat-icon>cloud_queue</mat-icon>
+        <span>Estado del Servidor</span>
+      </button>
+    </mat-menu>
+  </div>
+
 </div>

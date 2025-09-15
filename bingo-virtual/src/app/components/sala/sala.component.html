@@ -1,39 +1,41 @@
-<div class="bg-white p-8 rounded-xl shadow-lg animate-fade-in">
-  <h2 class="text-2xl font-bold text-gray-800 mb-2">🚪 Sala: {{ salaActual?.nombre }}</h2>
-  <p class="text-sm text-gray-500 mb-6">ID de la Sala: <code class="bg-gray-200 text-purple-800 font-mono px-2 py-1 rounded">{{ salaActual?.id }}</code> (¡Compártelo!)</p>
-  
-  <div class="flex flex-col md:flex-row gap-8">
-    <!-- Players List -->
-    <div class="md:w-1/3">
-      <h4 class="text-lg font-semibold mb-3">👥 Jugadores ({{ jugadores.length }})</h4>
-      <ul class="space-y-2">
-        <li *ngFor="let jugador of jugadores; let i = index" class="bg-gray-50 p-3 rounded-lg flex items-center gap-3">
-          <span class="text-xl">{{ i === 0 ? '👑' : '👤' }}</span>
-          <span class="font-medium text-gray-700">{{ jugador.nombre }}</span>
-        </li>
-      </ul>
-      <button *ngIf="puedeIniciarJuego" (click)="onIniciarJuego()" class="mt-4 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200">
-        🚀 Iniciar Juego
-      </button>
-    </div>
-    
-    <!-- Chat -->
-    <div class="md:w-2/3">
-      <h4 class="text-lg font-semibold mb-3">💬 Chat de la Sala</h4>
-      <div class="h-48 overflow-y-auto border rounded-lg p-3 bg-gray-50 space-y-2">
-        <div *ngFor="let msg of mensajesChat" class="text-sm">
-          <span class="text-gray-500">[{{ formatearTiempo(msg.timestamp) }}]</span> 
-          <strong class="text-purple-700">{{ msg.jugador }}:</strong> 
-          <span class="text-gray-800">{{ msg.mensaje }}</span>
-        </div>
+<div class="w-full max-w-2xl mx-auto">
+  <div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+    <div>
+      <h2 class="text-xl sm:text-2xl font-bold text-[var(--itb-dark-blue)]">Sala: {{ salaActual?.nombre }}</h2>
+      <p class="text-gray-500">Comparte el ID para que otros se unan:</p>
+      <div class="mt-2 flex items-center bg-[var(--background-light-gray)] border border-[var(--border-color)] rounded-md px-3 py-2">
+        <span class="font-mono text-[var(--itb-dark-blue)]">{{ salaActual?.id }}</span>
+        <button (click)="copiarIdSala()" class="ml-4 text-gray-500 hover:text-[var(--itb-accent-blue)] transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" /><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2H6zm8 2V5a1 1 0 00-1-1H7a1 1 0 00-1 1v.083l.083.083A1.5 1.5 0 018.5 7h3a1.5 1.5 0 011.414-1.917L14 5.083V5z" /></svg>
+        </button>
       </div>
-      <div class="mt-2 flex gap-2">
-        <textarea [(ngModel)]="nuevoMensaje" (keydown)="onEnterChat($event)" placeholder="Escribe un mensaje..." class="flex-grow block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"></textarea>
-        <button (click)="onEnviarMensaje()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">Enviar</button>
+    </div>
+    <button (click)="onVolverAlLobby()" class="text-gray-500 hover:text-[var(--itb-dark-blue)] transition flex items-center gap-1 text-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+      Volver al Lobby
+    </button>
+  </div>
+
+  <div class="mb-6">
+    <h3 class="text-lg font-semibold text-[var(--itb-dark-blue)] mb-3">Jugadores Conectados ({{ jugadores.length }})</h3>
+    <div class="bg-[var(--background-light-gray)] border border-[var(--border-color)] p-4 rounded-md space-y-2 max-h-48 overflow-y-auto">
+      <div *ngFor="let jugador of jugadores" class="flex items-center justify-between p-2 rounded-md bg-white/80 animate-fade-in">
+        <span class="font-medium text-gray-700">{{ jugador.nombre }}</span>
+        <span *ngIf="jugador.id === jugadorActual?.id" class="text-xs font-semibold text-[var(--itb-accent-blue)] bg-blue-100 px-2 py-1 rounded-full">(Tú)</span>
       </div>
     </div>
   </div>
 
-  <hr class="my-6">
-  <button (click)="onVolverAlLobby()" class="text-sm text-red-600 hover:text-red-800 font-medium transition-colors duration-200">← Volver al Lobby</button>
+  <div *ngIf="esCreadorSala" class="text-center mt-6">
+    <button (click)="onIniciarJuego()" 
+            [disabled]="jugadores.length < 1" 
+            class="w-full bg-[var(--itb-accent-blue)] text-white font-bold py-2 px-4 rounded-md hover:opacity-90 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
+      Iniciar Juego
+    </button>
+    <p *ngIf="jugadores.length < 1" class="text-sm text-gray-500 mt-2">Se necesita al menos 1 jugador para comenzar.</p>
+  </div>
+
+  <div *ngIf="!esCreadorSala" class="text-center mt-6">
+    <p class="text-gray-500">Esperando a que el anfitrión inicie el juego...</p>
+  </div>
 </div>

@@ -526,7 +526,7 @@ app.get('/stats', (req, res) => {
   res.json(stats);
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 const showMatrixAnimation = (callback) => {
   console.clear();
@@ -572,8 +572,7 @@ const showMatrixAnimation = (callback) => {
   }, 5000); // Duración de la animación: 5 segundos
 };
 
-server.listen(PORT, () => {
-  showMatrixAnimation(() => {
+const startServer = () => {
   const border = chalk.bold.hex('#8A2BE2')('═').repeat(60);
   const emptyLine = chalk.bold.hex('#8A2BE2')('║') + ' '.repeat(58) + chalk.bold.hex('#8A2BE2')('║');
 
@@ -583,7 +582,19 @@ server.listen(PORT, () => {
     return chalk.bold.hex('#8A2BE2')('║ ') + text + padding + chalk.bold.hex('#8A2BE2')(' ║');
   };
 
-  console.log(chalk.bold.hex('#8A2BE2')('\n╔' + border + '╗'));
+  const logoAscii = [
+    '    ████████╗',
+    '    ██╔═════╝',
+    '    ██████╗  ',
+    '    ██╔═══╝  ',
+    '    ████████╗',
+    '    ╚═══════╝'
+  ];
+
+  logoAscii.forEach(line => console.log(chalk.hex('#00BFFF')(line)));
+  console.log('');
+
+  console.log(chalk.bold.hex('#8A2BE2')('╔' + border + '╗'));
   console.log(line(chalk.hex('#FFD700').bold('           BINGO VIRTUAL MULTIJUGADOR')));
   console.log(line(chalk.hex('#00FFFF').bold('                 SERVIDOR INICIADO')));
   console.log(chalk.bold.hex('#8A2BE2')('╠' + border + '╣'));
@@ -595,7 +606,14 @@ server.listen(PORT, () => {
   console.log(line(`${chalk.green('● Socket.IO:')} ${chalk.yellow('Activo')}`));
   console.log(line(`${chalk.green('● CORS:')} ${chalk.yellow('http://localhost:4200')}`));
   console.log(chalk.bold.hex('#8A2BE2')('╚' + border + '╝\n'));
+};
+
+server.listen(PORT, () => {
+  if (process.stdout.isTTY) {
+    showMatrixAnimation(startServer);
+  } else {
+    startServer();
+  }
   });
-});
 
 module.exports = { app, server, io };

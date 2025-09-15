@@ -1,37 +1,44 @@
 /* Angular Material Theme */
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
+@import 'sweetalert2/dist/sweetalert2.min.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Variables de Colores Simples */
+/* Paleta de colores inspirada en el Instituto Tecnológico Beltrán */
 :root {
-  --primary-color: #3f51b5;
-  --accent-color: #ff4081;
-  --success-color: #4caf50;
-  --warning-color: #ff9800;
-  --error-color: #f44336;
-  --background-color: #fafafa;
+  --itb-dark-blue: #2c3e50; /* Azul oscuro/gris del header */
+  --itb-accent-blue: #2980b9; /* Azul medio para acentos y botones */
+  --background-white: #ffffff; /* Fondo blanco limpio */
+  --background-light-gray: #f4f6f8; /* Gris muy claro para secciones */
+  --text-dark: #34495e;       /* Gris oscuro para texto */
+  --text-light: #ffffff;      /* Blanco para texto sobre fondos oscuros */
+  --border-color: #dce4ec;    /* Gris claro para bordes */
 }
 
-/* Layout Principal */
+/* Estilo base del cuerpo */
+.glow-border {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+}
+
 body {
   margin: 0;
-  font-family: 'Roboto', sans-serif;
-  background-color: var(--background-color);
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(170deg, #e9f3f8 0%, #d8e6ee 100%);
+  color: var(--text-dark);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.main-container {
-  min-height: 100vh;
-  background: var(--background-color);
+.mat-mdc-card-content {
+    padding: 0 24px 24px 24px;
 }
 
-.content-area {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
 
 /* Tarjetas */
 .mat-mdc-card {

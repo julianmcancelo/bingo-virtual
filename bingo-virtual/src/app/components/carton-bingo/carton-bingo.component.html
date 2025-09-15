@@ -1,18 +1,22 @@
-<div class="relative bg-white rounded-lg shadow-lg border-2 border-red-500 p-2 font-sans">
-  <img src="/img/logo.png" alt="logo" class="absolute top-1 left-1 w-8 h-8">
+<div class="relative bg-white rounded-lg shadow-lg border border-[var(--border-color)] p-2 font-sans">
+  <img src="assets/img/logo.png" alt="Logo ITB" class="h-full w-full object-contain p-1 opacity-50">
   <table class="w-full border-collapse">
     <tbody>
       <tr *ngFor="let fila of carton; let i = index">
-                <td *ngFor="let celda of fila; let j = index" 
+                <td *ngFor="let celda of fila; let j = index"
             (click)="onToggleCelda(i, j)"
             [ngClass]="{
-              'bg-red-500 text-white': estaMarcada(celda),
-              'bg-white': celda && celda.numero !== null,
-              'bg-transparent border-none': !celda || celda.numero === null,
-              'cursor-pointer': celda && celda.numero !== null
+              'bg-[var(--itb-accent-blue)] text-white scale-105 shadow-inner': estaMarcada(celda),
+              'bg-white': celda && celda.numero !== null && !isLogoCell(i, j),
+              'bg-transparent border-none': (!celda || celda.numero === null) && !isLogoCell(i, j),
+              'cursor-pointer hover:bg-gray-50': celda && celda.numero !== null && !estaMarcada(celda),
+              'p-1': isLogoCell(i, j)
             }"
-            class="w-1/9 text-center h-16 border border-gray-300 text-2xl font-bold">
-          {{ celda?.numero }}
+            class="w-1/9 text-center h-10 sm:h-12 border border-[var(--border-color)] text-base sm:text-xl font-bold text-[var(--text-dark)] transition-all duration-200 ease-in-out">
+          <ng-container *ngIf="!isLogoCell(i, j)">{{ celda?.numero }}</ng-container>
+          <ng-container *ngIf="isLogoCell(i, j)">
+            <img src="assets/img/logo.png" alt="Logo" class="w-full h-full object-contain opacity-50"/>
+          </ng-container>
         </td>
       </tr>
     </tbody>

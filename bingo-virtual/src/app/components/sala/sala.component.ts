@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Jugador, Sala, MensajeChat } from '../../services/socket.service';
@@ -11,45 +12,47 @@ import { Jugador, Sala, MensajeChat } from '../../services/socket.service';
   styleUrls: ['./sala.component.css']
 })
 export class SalaComponent {
+  // Propiedades de entrada para recibir datos del componente padre
   @Input() salaActual: Sala | null = null;
   @Input() jugadorActual: Jugador | null = null;
   @Input() jugadores: Jugador[] = [];
-  @Input() mensajesChat: MensajeChat[] = [];
 
+  // Eventos de salida para comunicarse con el componente padre
   @Output() iniciarJuegoEvent = new EventEmitter<void>();
-  @Output() enviarMensajeEvent = new EventEmitter<string>();
   @Output() volverAlLobbyEvent = new EventEmitter<void>();
 
-  nuevoMensaje = '';
-
-  get puedeIniciarJuego(): boolean {
-    return this.salaActual?.jugadores[0]?.id === this.jugadorActual?.id && this.jugadores.length >= 1;
+  // Determina si el jugador actual es el creador de la sala
+  get esCreadorSala(): boolean {
+    return this.salaActual?.jugadores[0]?.id === this.jugadorActual?.id;
   }
 
+  // Emite el evento para iniciar el juego
   onIniciarJuego(): void {
     this.iniciarJuegoEvent.emit();
   }
 
-  onEnviarMensaje(): void {
-    if (this.nuevoMensaje.trim()) {
-      this.enviarMensajeEvent.emit(this.nuevoMensaje);
-      this.nuevoMensaje = '';
-    }
-  }
-
-  onEnterChat(event: KeyboardEvent): void {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      this.onEnviarMensaje();
-    }
-  }
-
+  // Emite el evento para volver al lobby
   onVolverAlLobby(): void {
     this.volverAlLobbyEvent.emit();
   }
 
-  formatearTiempo(fecha: Date | string): string {
-    const date = typeof fecha === 'string' ? new Date(fecha) : fecha;
-    return date.toLocaleTimeString();
+  // Copia el ID de la sala al portapapeles
+  copiarIdSala(): void {
+    if (this.salaActual?.id) {
+      navigator.clipboard.writeText(this.salaActual.id).then(() => {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'ID de sala copiado',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true
+        });
+      }).catch(err => {
+        console.error('Error al copiar el ID: ', err);
+        alert('No se pudo copiar el ID.');
+      });
+    }
   }
 }

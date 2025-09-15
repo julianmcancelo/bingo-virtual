@@ -35,10 +35,12 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatStepperModule } from '@angular/material/stepper';
 import { Subscription } from 'rxjs';
+import Swal from 'sweetalert2';
 import { SocketService, Jugador, Sala, MensajeChat, CeldaBingo } from './services/socket.service';
 import { LobbyComponent } from './components/lobby/lobby.component';
 import { SalaComponent } from './components/sala/sala.component';
 import { JuegoComponent } from './components/juego/juego.component';
+import { LoginComponent } from './components/login/login.component';
 
 @Component({
   selector: 'app-root',
@@ -68,6 +70,7 @@ import { JuegoComponent } from './components/juego/juego.component';
     MatSlideToggleModule,
     MatMenuModule,
     MatStepperModule,
+    LoginComponent,
     LobbyComponent,
     SalaComponent,
     JuegoComponent
@@ -84,8 +87,9 @@ export class AppComponent implements OnInit, OnDestroy {
   profesor = 'Prof. Sebastián Saldivar';
   
   // Estados básicos
-  vistaActual = 'lobby';
+  vistaActual = 'login'; // Vista inicial es ahora el login
   salaIdUnirse = '';
+  nombreJugadorInvitado: string = '';
   
   // Cartón de bingo
   carton: CeldaBingo[][] = [];
@@ -215,7 +219,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.socketService.error$.subscribe(error => {
         console.error('Error del servidor:', error);
-        alert('Error: ' + error.mensaje);
+        Swal.fire({
+          title: 'Error',
+          text: error.mensaje,
+          icon: 'error',
+          confirmButtonColor: 'var(--itb-accent-blue)',
+          confirmButtonText: 'Cerrar'
+        });
       })
     );
 
@@ -230,6 +240,11 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Crear nueva sala de juego
    */
+  loginComoInvitado(nombre: string): void {
+    this.nombreJugadorInvitado = nombre;
+    this.vistaActual = 'lobby';
+  }
+
   crearSala(event: { nombreSala: string, nombreJugador: string }): void {
     this.socketService.crearSala(event.nombreSala, event.nombreJugador);
   }
@@ -237,15 +252,10 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Unirse a sala existente
    */
-  unirseASala(): void {
-    // TODO: Esta lógica se moverá al LobbyComponent
-    // if (!this.nombreJugador.trim() || !this.salaIdUnirse.trim()) {
-    //   alert('Por favor, completa todos los campos');
-    //   return;
-    // }
-    
-    // this.socketService.unirseASala(this.salaIdUnirse, this.nombreJugador);
+  unirseASala(event: { salaId: string, nombreJugador: string }): void {
+    this.socketService.unirseASala(event.salaId, event.nombreJugador);
   }
+
 
   /**
    * Iniciar juego en la sala actual
@@ -534,6 +544,72 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Mostrar notificación al usuario
    */
+      mostrarEstadoServidor(): void {
+    if (this.estaConectado) {
+      Swal.fire({
+        title: 'Estado del Servidor',
+        text: 'La conexión con el servidor está activa y funcionando correctamente.',
+        icon: 'success',
+        confirmButtonColor: 'var(--itb-accent-blue)',
+        confirmButtonText: '¡Excelente!'
+      });
+    } else {
+      Swal.fire({
+        title: 'Estado del Servidor',
+        text: 'No se pudo establecer conexión con el servidor. Por favor, intenta recargar la página.',
+        icon: 'error',
+        confirmButtonColor: 'var(--itb-accent-blue)',
+        confirmButtonText: 'Entendido'
+      });
+    }
+  }
+
+    mostrarInfoProyecto(): void {
+    Swal.fire({
+      title: 'Bingo Virtual Educativo',
+      html: `
+        <div class="text-left text-gray-700 space-y-5 p-2">
+
+          <!-- Cátedra -->
+          <div class="p-3 border rounded-lg bg-gray-50">
+            <h3 class="font-semibold text-lg text-[var(--itb-dark-blue)] flex items-center gap-2 mb-2">
+              <span class="text-xl">🎓</span> Cátedra
+            </h3>
+            <p class="text-sm"><strong>Materia:</strong> ${this.materia}</p>
+            <p class="text-sm"><strong>Profesor:</strong> ${this.profesor}</p>
+          </div>
+
+          <!-- Equipo -->
+          <div class="p-3 border rounded-lg bg-gray-50">
+            <h3 class="font-semibold text-lg text-[var(--itb-dark-blue)] flex items-center gap-2 mb-2">
+              <span class="text-xl">👨‍💻</span> Equipo de Desarrollo
+            </h3>
+            <p class="text-sm">${this.autores}</p>
+          </div>
+
+          <!-- Tecnologías -->
+          <div class="p-3 border rounded-lg bg-gray-50">
+            <h3 class="font-semibold text-lg text-[var(--itb-dark-blue)] flex items-center gap-2 mb-2">
+              <span class="text-xl">🛠️</span> Stack Tecnológico
+            </h3>
+            <ul class="text-sm space-y-1 pl-1">
+              <li><strong>Frontend:</strong> Angular 17</li>
+              <li><strong>Backend:</strong> Node.js, Express, Socket.IO</li>
+              <li><strong>Estilos:</strong> Tailwind CSS & Angular Material</li>
+              <li><strong>Alertas:</strong> SweetAlert2</li>
+              <li><strong>DevOps:</strong> Concurrently (para ejecución paralela)</li>
+            </ul>
+          </div>
+
+        </div>
+      `,
+      width: '550px',
+      showCloseButton: true,
+      confirmButtonColor: 'var(--itb-accent-blue)',
+      confirmButtonText: 'Cerrar'
+    });
+  }
+
   mostrarNotificacion(mensaje: string, tipo: 'success' | 'warning' | 'error' = 'success'): void {
     console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
     // Aquí se podría integrar con MatSnackBar en el futuro
