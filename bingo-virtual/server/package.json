@@ -7,7 +7,7 @@
     "node": "18.x"
   },
   "scripts": {
-    "start": "npx kill-port 3000 && node server.js",
+    "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "keywords": [
