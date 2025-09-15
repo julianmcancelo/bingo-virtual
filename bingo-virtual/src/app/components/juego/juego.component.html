@@ -12,8 +12,11 @@
     </div>
   </div>
 
-  <!-- Cartón de Bingo Argentino -->
-  <app-carton-bingo></app-carton-bingo>
+  <app-carton-bingo 
+    [carton]="carton"
+    [numerosSorteados]="numerosSorteados"
+    (toggleCeldaEvent)="onToggleCelda($event)">
+  </app-carton-bingo>
 
   <!-- Called Numbers History Board -->
   <div class="mt-8">

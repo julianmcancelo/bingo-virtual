@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Jugador, CeldaBingo } from '../../services/socket.service';
 import { CartonBingoComponent } from '../carton-bingo/carton-bingo.component';
+import { Jugador, CeldaBingo } from '../../services/socket.service';
 
 @Component({
   selector: 'app-juego',
@@ -18,8 +18,8 @@ export class JuegoComponent {
 
   @Output() toggleCeldaEvent = new EventEmitter<{ fila: number, columna: number }>();
 
-  onToggleCelda(fila: number, columna: number): void {
-    this.toggleCeldaEvent.emit({ fila, columna });
+  onToggleCelda(event: { fila: number, columna: number }): void {
+    this.toggleCeldaEvent.emit(event);
   }
 
   numeroDisponible(numero: number): boolean {

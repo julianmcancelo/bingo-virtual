@@ -85,6 +85,57 @@ const salas = new Map();
  * @returns {Array<Array<Object>>} Matriz 5x5 con números del bingo
  * @complexity O(n²) donde n=5, para llenar la matriz
  */
+/**
+ * ALGORITMO DE GENERACIÓN DE CARTÓN DE BINGO ARGENTINO (9x3)
+ * 
+ * @description Genera un cartón único de 9x3 con 15 números.
+ * @returns {Array<Array<Object>>} Matriz 3x9 con números y celdas vacías.
+ */
+function generarCartonArgentino() {
+  let carton = Array(3).fill(null).map(() => Array(9).fill(null));
+  let numerosPorColumna = Array(9).fill(0);
+  let numerosPorFila = Array(3).fill(0);
+
+  // 1. Distribuir 15 números en el cartón
+  for (let i = 0; i < 15; i++) {
+    let fila, col;
+    do {
+      fila = Math.floor(Math.random() * 3);
+      col = Math.floor(Math.random() * 9);
+    } while (carton[fila][col] !== null || numerosPorFila[fila] >= 5 || numerosPorColumna[col] >= 2);
+
+    const min = col * 10 + (col === 0 ? 1 : 0);
+    const max = col * 10 + 9 + (col === 8 ? 1 : 0);
+    let numero;
+    do {
+      numero = Math.floor(Math.random() * (max - min + 1)) + min;
+    } while (carton.flat().includes(numero));
+
+    carton[fila][col] = numero;
+    numerosPorFila[fila]++;
+    numerosPorColumna[col]++;
+  }
+
+  // 2. Ordenar números dentro de cada columna
+  for (let col = 0; col < 9; col++) {
+    const colNumeros = carton.map(f => f[col]).filter(n => n !== null);
+    colNumeros.sort((a, b) => a - b);
+    let numIndex = 0;
+    for (let fila = 0; fila < 3; fila++) {
+      if (carton[fila][col] !== null) {
+        carton[fila][col] = colNumeros[numIndex++];
+      }
+    }
+  }
+
+  // 3. Convertir a formato de objeto CeldaBingo
+  return carton.map(fila => fila.map(num => ({
+    numero: num,
+    marcada: num === null,
+    esLibre: num === null
+  })));
+}
+
 function generarCartonUnico(jugadorId) {
   const carton = [];
   const rangos = [
@@ -246,7 +297,7 @@ io.on('connection', (socket) => {
       id: uuidv4(),
       nombre: nombreJugador,
       socketId: socket.id,
-      carton: generarCartonUnico(socket.id),
+      carton: generarCartonArgentino(),
       puntuacion: 0,
       lineasCompletadas: 0,
       tiempoConexion: new Date()
@@ -293,7 +344,7 @@ io.on('connection', (socket) => {
       id: uuidv4(),
       nombre: nombreJugador,
       socketId: socket.id,
-      carton: generarCartonUnico(socket.id),
+      carton: generarCartonArgentino(),
       puntuacion: 0,
       lineasCompletadas: 0,
       tiempoConexion: new Date()

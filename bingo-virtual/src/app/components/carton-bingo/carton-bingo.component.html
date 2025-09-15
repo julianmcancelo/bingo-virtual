@@ -2,15 +2,17 @@
   <img src="/img/logo.png" alt="logo" class="absolute top-1 left-1 w-8 h-8">
   <table class="w-full border-collapse">
     <tbody>
-      <tr *ngFor="let fila of carton">
-        <td *ngFor="let numero of fila" 
+      <tr *ngFor="let fila of carton; let i = index">
+                <td *ngFor="let celda of fila; let j = index" 
+            (click)="onToggleCelda(i, j)"
             [ngClass]="{
-              'bg-red-500 text-white': false, 
-              'bg-white': numero !== null,
-              'bg-transparent border-none': numero === null
+              'bg-red-500 text-white': estaMarcada(celda),
+              'bg-white': celda && celda.numero !== null,
+              'bg-transparent border-none': !celda || celda.numero === null,
+              'cursor-pointer': celda && celda.numero !== null
             }"
             class="w-1/9 text-center h-16 border border-gray-300 text-2xl font-bold">
-          {{ numero }}
+          {{ celda?.numero }}
         </td>
       </tr>
     </tbody>
