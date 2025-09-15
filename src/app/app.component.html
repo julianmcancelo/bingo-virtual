@@ -53,20 +53,25 @@
   </main>
 
   <!-- Floating Action Button with Menu -->
-  <div class="fixed bottom-6 right-6 z-50">
-    <button mat-fab color="primary" [matMenuTriggerFor]="menu" matTooltip="Opciones">
-      <mat-icon>menu</mat-icon>
+<div class="fixed bottom-6 right-6 z-50">
+  <button mat-fab color="primary" [matMenuTriggerFor]="mainMenu" matTooltip="Opciones">
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <mat-menu #mainMenu="matMenu" xPosition="before">
+    <button mat-menu-item (click)="mostrarEstadoServidor()">
+      <mat-icon>cloud_queue</mat-icon>
+      <span>Estado del Servidor</span>
     </button>
-    <mat-menu #menu="matMenu" xPosition="before">
-      <button mat-menu-item (click)="mostrarInfoProyecto()">
-        <mat-icon>info_outline</mat-icon>
-        <span>Información</span>
-      </button>
-      <button mat-menu-item (click)="mostrarEstadoServidor()">
-        <mat-icon>cloud_queue</mat-icon>
-        <span>Estado del Servidor</span>
-      </button>
-    </mat-menu>
-  </div>
+    <button mat-menu-item (click)="mostrarAjustes()">
+      <mat-icon>settings</mat-icon>
+      <span>Ajustes del Juego</span>
+    </button>
+    <button mat-menu-item (click)="mostrarInfoProyecto()">
+      <mat-icon>info_outline</mat-icon>
+      <span>Info del Proyecto</span>
+    </button>
+  </mat-menu>
+</div>
 
 </div>

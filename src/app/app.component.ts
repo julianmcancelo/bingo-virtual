@@ -95,7 +95,6 @@ export class AppComponent implements OnInit, OnDestroy {
   
   // Cartón de bingo
   carton: CeldaBingo[][] = [];
-  gameSettings!: GameSettings;
   
   // Estado del juego
   juegoIniciado = false;
@@ -117,6 +116,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private synth: SpeechSynthesis | null = null;
   private voices: SpeechSynthesisVoice[] = [];
   
+  private settingsService: SettingsService;
   
   constructor(
     public socketService: SocketService,
@@ -154,6 +154,27 @@ export class AppComponent implements OnInit, OnDestroy {
    * CONFIGURACIÓN DE SOCKET.IO
    */
   private configurarSocketIO(): void {
+    this.subscriptions.push(
+      // Suscripción a la configuración del juego
+      this.settingsService.settings$.subscribe(settings => {
+        this.gameSettings = settings;
+      })
+    );
+
+    this.subscriptions.push(
+      // Suscripción a la configuración del juego
+      this.settingsService.settings$.subscribe(settings => {
+        this.gameSettings = settings;
+      })
+    );
+
+    this.subscriptions.push(
+      // Suscripción a la configuración del juego
+      this.settingsService.settings$.subscribe(settings => {
+        this.gameSettings = settings;
+      })
+    );
+
     // Las suscripciones para el estado de la conexión y el socketId se manejarán
     // directamente en la plantilla con el pipe async o se leerán con getValue() en el modal.
     // Mantenemos las suscripciones que sí ejecutan lógica en el componente.
@@ -196,6 +217,10 @@ export class AppComponent implements OnInit, OnDestroy {
         this.totalSorteados = data.totalSorteados;
         console.log('Número sorteado:', data.numero);
         this.narrarNumero(data.numero);
+
+        if (this.gameSettings.marcadoAutomatico) {
+          this.marcarNumeroAutomaticamente(data.numero);
+        }
       })
     );
 
@@ -518,7 +543,21 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+    private marcarNumeroAutomaticamente(numero: number): void {
+    for (let i = 0; i < this.carton.length; i++) {
+      for (let j = 0; j < this.carton[i].length; j++) {
+        const celda = this.carton[i][j];
+        if (celda.numero === numero && !celda.marcada) {
+          this.toggleCelda({ fila: i, columna: j });
+          return; // Salir después de encontrar y marcar el número
+        }
+      }
+    }
+  }
+
   private narrarNumero(numero: number): void {
+    if (!this.gameSettings?.narradorHabilitado) return;
+
     if (this.synth) {
       this.synth.cancel(); // Cancelar narraciones anteriores
       const utterance = new SpeechSynthesisUtterance(`${numero}`);
