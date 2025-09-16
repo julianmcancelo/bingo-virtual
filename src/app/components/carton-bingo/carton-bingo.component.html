@@ -1,19 +1,23 @@
-<div class="relative bg-white rounded-lg shadow-lg border border-[var(--border-color)] p-2 font-sans">
-  <table class="w-full border-collapse">
+<div class="carton-bingo bg-white rounded-lg shadow-lg border-2 border-gray-800 p-4 font-sans relative">
+  <!-- Logo en esquina superior izquierda -->
+  <div class="absolute top-2 left-2 w-8 h-8 z-10">
+    <img src="img/logo.png" alt="Logo" class="w-full h-full object-contain opacity-60">
+  </div>
+  
+  <table class="w-full border-collapse mt-6">
     <tbody>
-      <tr *ngFor="let fila of carton; let i = index">
+      <tr *ngFor="let fila of carton; let i = index" class="border-b border-gray-400">
         <td *ngFor="let celda of fila; let j = index"
             (click)="onToggleCelda(i, j)"
-            [style.background-image]="isLogoCell(i, j) ? 'url(assets/img/logo.png)' : null"
             [ngClass]="{
-              'marcada': estaMarcada(celda),
-              'bg-white': celda && celda.numero !== null && !isLogoCell(i, j) && !estaMarcada(celda),
-              'bg-transparent border-none': !celda || celda.numero === null,
-              'cursor-pointer hover:bg-gray-100': celda && celda.numero !== null && !estaMarcada(celda),
-              'bg-no-repeat bg-center bg-contain opacity-20': isLogoCell(i, j)
+              'marked': estaMarcada(celda),
+              'celda-numero': !celda.esLibre,
+              'celda-vacia': celda.esLibre,
+              'cursor-pointer hover:bg-gray-100': !celda.esLibre && !estaMarcada(celda),
+              'cursor-not-allowed': celda.esLibre
             }"
-            class="celda w-1/9 text-center h-10 sm:h-12 border border-[var(--border-color)] text-base sm:text-xl font-bold text-[var(--text-dark)] transition-all duration-200 ease-in-out">
-          <ng-container *ngIf="!isLogoCell(i, j)">{{ celda?.numero }}</ng-container>
+            class="celda text-center h-12 w-12 border border-gray-400 text-lg font-bold transition-all duration-200">
+          <span *ngIf="!celda.esLibre" class="select-none">{{ celda.numero }}</span>
         </td>
       </tr>
     </tbody>

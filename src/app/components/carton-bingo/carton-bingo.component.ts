@@ -22,38 +22,24 @@ export class CartonBingoComponent implements OnChanges {
   }
 
   private findLogoCell(): void {
-    const middleRow = Math.floor(this.carton.length / 2);
-    if (this.carton[middleRow]) {
-      for (let j = 0; j < this.carton[middleRow].length; j++) {
-        if (this.carton[middleRow][j]?.numero === null) {
-          this.logoCell = { fila: middleRow, columna: j };
-          return;
-        }
-      }
-    }
-    // Fallback if middle row is full
-    for (let i = 0; i < this.carton.length; i++) {
-      for (let j = 0; j < this.carton[i].length; j++) {
-        if (this.carton[i][j]?.numero === null) {
-          this.logoCell = { fila: i, columna: j };
-          return;
-        }
-      }
-    }
+    // Ya no necesitamos buscar celda para logo, se muestra en esquina
+    this.logoCell = null;
   }
 
-    onToggleCelda(fila: number, columna: number): void {
-    if (this.isLogoCell(fila, columna)) return; // Prevent clicking on logo
+  onToggleCelda(fila: number, columna: number): void {
     if (this.carton && this.carton[fila] && this.carton[fila][columna]) {
-      this.toggleCeldaEvent.emit({ fila, columna });
+      const celda = this.carton[fila][columna];
+      if (!celda.esLibre) {
+        this.toggleCeldaEvent.emit({ fila, columna });
+      }
     }
   }
 
-    estaMarcada(celda: any): boolean {
+  estaMarcada(celda: any): boolean {
     return celda && celda.marcada && !celda.esLibre;
   }
 
   isLogoCell(fila: number, columna: number): boolean {
-    return this.logoCell !== null && this.logoCell.fila === fila && this.logoCell.columna === columna;
+    return false; // Ya no usamos celdas para el logo
   }
 }

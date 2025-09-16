@@ -197,7 +197,7 @@ import { JuegoComponent } from '../juego/juego.component';
                 maxlength="200">
               <button 
                 (click)="enviarMensaje()" 
-                [disabled]="!nuevoMensaje?.trim()"
+                [disabled]="!nuevoMensaje.trim()"
                 class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed">
                 <mat-icon>send</mat-icon>
               </button>
@@ -349,68 +349,136 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     this.jugadores = [];
   }
 
-  // Generar cartón de bingo
+  // Generar cartón de bingo oficial (3x9 con 5 números por fila)
   generarCarton(): void {
     this.carton = [];
-    for (let i = 0; i < 3; i++) {
-      const fila: CeldaBingo[] = [];
-      for (let j = 0; j < 9; j++) {
-        // Generar número aleatorio según la columna
-        const min = j * 10 + 1;
-        const max = (j + 1) * 10;
-        const numero = Math.floor(Math.random() * (max - min + 1)) + min;
-        
-        // Celda libre en el centro
-        if (i === 1 && j === 4) {
-          fila.push({
-            numero: null,
-            marcada: true,
-            esLibre: true
-          });
-        } else {
-          fila.push({
+    
+    // Generar números disponibles por columna
+    const numerosPorColumna: number[][] = [];
+    for (let col = 0; col < 9; col++) {
+      const numeros: number[] = [];
+      const min = col === 0 ? 1 : col * 10;
+      const max = col === 0 ? 9 : col === 8 ? 90 : (col * 10) + 9;
+      
+      for (let num = min; num <= max; num++) {
+        numeros.push(num);
+      }
+      numerosPorColumna.push(this.shuffleArray([...numeros]));
+    }
+
+    // Crear 3 filas
+    for (let fila = 0; fila < 3; fila++) {
+      const filaCarton: CeldaBingo[] = [];
+      
+      // Seleccionar 5 columnas aleatorias para tener números
+      const columnasConNumeros = this.shuffleArray([0, 1, 2, 3, 4, 5, 6, 7, 8]).slice(0, 5).sort();
+      
+      for (let col = 0; col < 9; col++) {
+        if (columnasConNumeros.includes(col)) {
+          // Celda con número
+          const numero = numerosPorColumna[col].pop() || 1;
+          filaCarton.push({
             numero: numero,
             marcada: false,
             esLibre: false
           });
+        } else {
+          // Celda vacía
+          filaCarton.push({
+            numero: null,
+            marcada: false,
+            esLibre: true
+          });
         }
       }
-      this.carton.push(fila);
+      
+      this.carton.push(filaCarton);
     }
-    console.log('[BINGO-GAME] Cartón generado:', this.carton);
+    
+    console.log('[BINGO-GAME] Cartón oficial generado:', this.carton);
+  }
+
+  // Función auxiliar para mezclar arrays
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
 
   toggleCelda(event: { fila: number; columna: number }): void {
+    if (this.hayBingo) return; // No permitir cambios si ya hay bingo
     if (!this.carton[event.fila] || !this.carton[event.fila][event.columna]) return;
     
     const celda = this.carton[event.fila][event.columna];
     if (celda && !celda.esLibre && celda.numero && this.numerosSorteados.includes(celda.numero)) {
       celda.marcada = !celda.marcada;
       console.log('[BINGO-GAME] Celda marcada:', celda.numero, 'Estado:', celda.marcada);
-      this.verificarBingo();
+      this.verificarCondicionesGanadoras();
     }
   }
 
-  private verificarBingo(): boolean {
-    // Verificar líneas horizontales
+  private verificarCondicionesGanadoras(): void {
+    const lineasCompletas = this.contarLineasCompletas();
+    const totalNumerosMarcados = this.contarNumerosMarcados();
+    
+    if (totalNumerosMarcados === 15) {
+      // BINGO - Cartón completo
+      this.hayBingo = true;
+      this.mostrarNotificacionBingo('🎉 ¡BINGO!', 'Has completado todo el cartón. ¡Felicidades!', true);
+    } else if (lineasCompletas === 2) {
+      // Doble línea
+      this.mostrarNotificacionBingo('🔥 ¡DOBLE LÍNEA!', 'Has completado dos líneas. ¡Sigue así!', false);
+    } else if (lineasCompletas === 1) {
+      // Línea simple
+      this.mostrarNotificacionBingo('⭐ ¡LÍNEA!', 'Has completado una línea. ¡Continúa jugando!', false);
+    }
+  }
+
+  private contarLineasCompletas(): number {
+    let lineasCompletas = 0;
+    
+    // Verificar líneas horizontales (solo números, no celdas vacías)
     for (let i = 0; i < this.carton.length; i++) {
-      if (this.carton[i].every(celda => celda.marcada)) {
-        console.log('[BINGO-GAME] ¡BINGO! Línea horizontal:', i);
-        this.hayBingo = true;
-        return true;
+      const numerosEnFila = this.carton[i].filter(celda => !celda.esLibre);
+      const numerosMarcadosEnFila = numerosEnFila.filter(celda => celda.marcada);
+      
+      if (numerosEnFila.length === numerosMarcadosEnFila.length && numerosEnFila.length === 5) {
+        lineasCompletas++;
       }
     }
     
-    // Verificar líneas verticales
-    for (let j = 0; j < 9; j++) {
-      if (this.carton.every(fila => fila[j].marcada)) {
-        console.log('[BINGO-GAME] ¡BINGO! Línea vertical:', j);
-        this.hayBingo = true;
-        return true;
+    return lineasCompletas;
+  }
+
+  private contarNumerosMarcados(): number {
+    let total = 0;
+    for (let i = 0; i < this.carton.length; i++) {
+      for (let j = 0; j < this.carton[i].length; j++) {
+        const celda = this.carton[i][j];
+        if (!celda.esLibre && celda.marcada) {
+          total++;
+        }
       }
     }
-    
-    return false;
+    return total;
+  }
+
+  private mostrarNotificacionBingo(titulo: string, mensaje: string, esBingo: boolean): void {
+    Swal.fire({
+      title: titulo,
+      text: mensaje,
+      icon: esBingo ? 'success' : 'info',
+      confirmButtonText: esBingo ? 'Jugar de Nuevo' : 'Continuar',
+      allowOutsideClick: !esBingo,
+      allowEscapeKey: !esBingo
+    }).then((result) => {
+      if (esBingo && result.isConfirmed) {
+        this.volverAlLobby();
+      }
+    });
   }
 
   // Métodos del chat

@@ -2,11 +2,94 @@
   display: block;
 }
 
+/* Estilos del cartón de bingo oficial */
+.carton-bingo {
+  max-width: 500px;
+  margin: 0 auto;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.celda {
+  position: relative;
+  min-width: 45px;
+  min-height: 48px;
+  vertical-align: middle;
+}
+
+.celda-numero {
+  background-color: white;
+  color: #1a1a1a;
+}
+
+.celda-vacia {
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+}
+
+.celda.marked {
+  background-color: #3b82f6 !important;
+  color: white !important;
+  position: relative;
+}
+
+.celda.marked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+  z-index: 1;
+}
+
+.celda.marked span {
+  opacity: 0.7;
+}
+
+/* Mantener compatibilidad con clase anterior */
 .celda.marcada {
-  background-color: #28a745 !important; /* Verde éxito */
-  color: white !important; /* Forzar el color del texto a blanco */
+  background-color: #28a745 !important;
+  color: white !important;
   transform: scale(1.05);
   border-radius: 8px;
   font-weight: bold;
   box-shadow: 0 0 12px rgba(40, 167, 69, 0.7);
+}
+
+/* Hover effects */
+.celda-numero:hover:not(.marked):not(.marcada) {
+  background-color: #f3f4f6;
+  transform: scale(1.05);
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .carton-bingo {
+    max-width: 100%;
+    padding: 16px;
+  }
+  
+  .celda {
+    min-width: 35px;
+    min-height: 40px;
+    font-size: 14px;
+  }
+}
+
+/* Animaciones */
+.celda {
+  transition: all 0.2s ease-in-out;
+}
+
+.marked, .marcada {
+  animation: markCell 0.3s ease-in-out;
+}
+
+@keyframes markCell {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
