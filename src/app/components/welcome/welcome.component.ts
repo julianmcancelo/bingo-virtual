@@ -30,12 +30,80 @@ import { MatIconModule } from '@angular/material/icon';
           <p class="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
             La mejor experiencia de bingo en línea con premios increíbles y diversión asegurada
           </p>
+          
+          <!-- Urgent Call to Action -->
+          <div class="mt-8 bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 rounded-lg p-6 max-w-4xl mx-auto shadow-xl">
+            <div class="text-white text-center">
+              <h2 class="text-2xl font-bold mb-2">🎉 ¡REGÍSTRATE Y DESBLOQUEA TODOS LOS BENEFICIOS! 🎉</h2>
+              <p class="text-lg mb-4">
+                <strong>Los invitados pueden jugar, pero los miembros obtienen mucho más:</strong><br>
+                Premios exclusivos, estadísticas, torneos y la experiencia completa del bingo.
+              </p>
+              <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <div class="bg-white text-gray-800 px-4 py-2 rounded-full font-semibold">
+                  ✨ Registro 100% GRATIS
+                </div>
+                <div class="bg-white text-gray-800 px-4 py-2 rounded-full font-semibold">
+                  🏆 Premios Exclusivos
+                </div>
+                <div class="bg-white text-gray-800 px-4 py-2 rounded-full font-semibold">
+                  📊 Estadísticas Completas
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Game Access Section -->
+        <div class="mt-10 bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg max-w-4xl mx-auto">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <mat-icon class="text-blue-400">info</mat-icon>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-lg font-medium text-blue-800">
+                🎮 ¡Todos pueden jugar! Pero los miembros obtienen mucho más
+              </h3>
+              <div class="mt-2 text-sm text-blue-700">
+                <p>
+                  <strong>🎯 Invitados:</strong> Pueden jugar partidas básicas de bingo.
+                  <br>
+                  <strong>👑 Miembros registrados:</strong> Acceso completo a premios, estadísticas, torneos, salas privadas y bonos especiales.
+                  <br>
+                  <strong>🎁 Oferta limitada:</strong> Los primeros 100 usuarios que se registren hoy recibirán bonos especiales de bienvenida.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Access Buttons -->
+        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <button (click)="navigateToGame()" class="inline-flex items-center px-6 py-3 border-2 border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-all duration-200">
+            🎮 Jugar como Invitado
+          </button>
+          <span class="text-gray-400 font-medium">o</span>
+          <button 
+            mat-raised-button 
+            color="accent" 
+            class="w-full mb-4 py-3 text-lg font-semibold"
+            (click)="navigateToRegister()">
+            👑 Registrarse para Beneficios Completos
+          </button>
+          
+          <button 
+            mat-stroked-button 
+            color="primary" 
+            class="w-full mb-4 py-3 text-lg font-semibold"
+            (click)="navigateToAbout()">
+            ℹ️ Información del Proyecto
+          </button>
         </div>
 
         <!-- Benefits Section -->
         <div class="mt-10">
           <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">
-            ¡Regístrate ahora y disfruta de estos beneficios!
+            ¡Regístrate ahora y disfruta de estos beneficios exclusivos!
           </h2>
           
           <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -97,15 +165,33 @@ import { MatIconModule } from '@angular/material/icon';
 
         <!-- CTA Buttons -->
         <div class="mt-16 text-center">
-          <div class="inline-flex rounded-md shadow">
-            <button (click)="navigateToRegister()" class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
-              Crear Cuenta Gratis
-            </button>
-          </div>
-          <div class="mt-4">
-            <button (click)="navigateToLogin()" class="font-medium text-blue-600 hover:text-blue-500">
-              ¿Ya tienes cuenta? Inicia sesión
-            </button>
+          <div class="bg-gray-50 rounded-2xl p-8 max-w-2xl mx-auto shadow-lg">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">🚀 ¡Empieza a Jugar en 30 Segundos!</h3>
+            <p class="text-gray-600 mb-6">Únete a miles de jugadores que ya están ganando premios increíbles</p>
+            
+            <div class="space-y-4">
+              <div class="inline-flex rounded-md shadow-lg">
+                <button (click)="navigateToRegister()" class="inline-flex items-center justify-center px-10 py-4 border border-transparent text-lg font-bold rounded-lg text-white bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-xl">
+                  🎯 CREAR CUENTA GRATIS - ¡JUGAR AHORA!
+                </button>
+              </div>
+              
+              <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                <span>✅ Sin tarjeta de crédito</span>
+                <span>•</span>
+                <span>✅ Registro instantáneo</span>
+                <span>•</span>
+                <span>✅ Bonos de bienvenida</span>
+              </div>
+              
+              <div class="mt-6 pt-4 border-t border-gray-200">
+                <button (click)="navigateToLogin()" class="inline-flex items-center font-semibold text-blue-600 hover:text-blue-700 text-lg">
+                  <span class="mr-2">👋</span>
+                  ¿Ya tienes cuenta? Inicia sesión y continúa ganando
+                  <span class="ml-2">→</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -171,7 +257,15 @@ export class WelcomeComponent {
     this.router.navigate(['/auth/register']);
   }
 
+  navigateToAbout(): void {
+    this.router.navigate(['/about']);
+  }
+
   navigateToLogin(): void {
     this.router.navigate(['/auth/login']);
+  }
+
+  navigateToGame(): void {
+    this.router.navigate(['/bingo']);
   }
 }

@@ -1,9 +1,269 @@
+/* ===== CONTAINER & LAYOUT ===== */
+.login-container {
+  position: relative;
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+/* ===== DECORATIVE BACKGROUND ===== */
+.bg-decoration {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: linear-gradient(135deg, var(--itb-accent-blue), var(--itb-light-blue));
+  border-radius: 50%;
+  opacity: 0.1;
+  animation: float 6s ease-in-out infinite;
+}
+
+.bg-decoration-2 {
+  position: absolute;
+  bottom: -30px;
+  left: -30px;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(45deg, var(--itb-light-blue), #60a5fa);
+  border-radius: 50%;
+  opacity: 0.08;
+  animation: float 8s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+/* ===== MAIN CARD ===== */
+.login-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 28px;
+  padding: 3rem 2.5rem;
+  box-shadow: 
+    0 25px 30px -5px rgba(0, 0, 0, 0.12),
+    0 15px 15px -5px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== HEADER SECTION ===== */
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcome-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, var(--itb-accent-blue), var(--itb-light-blue));
+  border-radius: 22px;
+  margin-bottom: 1.5rem;
+  animation: pulse 2s ease-in-out infinite;
+  padding: 12px;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.welcome-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--itb-dark-blue);
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, var(--itb-dark-blue), var(--itb-accent-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.025em;
+}
+
+.welcome-subtitle {
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 320px;
+  margin: 0 auto;
+  font-weight: 400;
+}
+
+/* ===== FORM STYLES ===== */
+.login-form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Enhanced Input styling with modern animations */
+.input-container {
+  margin-bottom: 2rem;
+  position: relative;
+  transform: translateY(0);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-container:hover {
+  transform: translateY(-2px);
+}
+
+.custom-input {
+  width: 100%;
+  font-size: 1.1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.custom-input::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.1), transparent);
+  transition: left 0.6s ease;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.custom-input:focus-within::before {
+  left: 100%;
+}
+
+.custom-input .mat-mdc-form-field-outline {
+  color: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-input:hover .mat-mdc-form-field-outline {
+  color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 20px rgba(79, 70, 229, 0.2);
+}
+
+.custom-input .mat-mdc-form-field-outline-thick {
+  color: #4f46e5;
+  box-shadow: 0 0 25px rgba(79, 70, 229, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-input .mat-mdc-form-field-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-input:focus-within .mat-mdc-form-field-label {
+  color: #4f46e5;
+  text-shadow: 0 0 10px rgba(79, 70, 229, 0.5);
+}
+
+.custom-input .mat-mdc-input-element {
+  color: white;
+  font-weight: 500;
+  background: transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-input .mat-mdc-input-element:focus {
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.custom-input .mat-mdc-input-element::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.custom-input .mat-mdc-input-element:focus::placeholder {
+  color: rgba(79, 70, 229, 0.7);
+}
+
+.input-icon {
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1);
+}
+
+.custom-input:focus-within .input-icon {
+  color: #4f46e5;
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(79, 70, 229, 0.6));
+}
+
+.custom-input:hover .input-icon {
+  transform: scale(1.05);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Floating label animation enhancement */
+.custom-input .mat-mdc-form-field-label-wrapper {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Error state styling */
+.custom-input.mat-form-field-invalid .mat-mdc-form-field-outline {
+  color: #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+}
+
+.custom-input.mat-form-field-invalid .input-icon {
+  color: #ef4444;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Success state when valid */
+.custom-input.mat-form-field-valid:not(.mat-form-field-invalid) .input-icon {
+  color: #10b981;
+}
+
+.custom-input.mat-form-field-valid:not(.mat-form-field-invalid) .mat-mdc-form-field-outline {
+  color: rgba(16, 185, 129, 0.5);
+}
+
+/* ===== MATERIAL FORM FIELD OVERRIDES ===== */
 :host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline {
-  color: #d1d5db;
+  color: #e2e8f0;
+  transition: all 0.3s ease;
 }
 
 :host ::ng-deep .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline {
-  color: var(--itb-accent-blue);
+  color: var(--itb-accent-blue) !important;
+  border-width: 2px;
 }
 
 :host ::ng-deep .mat-form-field.ng-invalid.ng-touched .mat-form-field-outline {
@@ -12,23 +272,153 @@
 
 :host ::ng-deep .mat-input-element {
   color: var(--text-dark);
+  font-size: 1rem;
 }
 
+:host ::ng-deep .mat-form-field-label {
+  color: #64748b !important;
+}
 
-/* Estilo para el botón primario con gradiente */
-.btn-primary-gradient {
-  background: linear-gradient(45deg, var(--itb-accent-blue), var(--itb-light-blue));
+:host ::ng-deep .mat-focused .mat-form-field-label {
+  color: var(--itb-accent-blue) !important;
+}
+
+/* ===== PRIMARY BUTTON ===== */
+.primary-btn {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  background: linear-gradient(135deg, var(--itb-accent-blue), var(--itb-light-blue));
   color: white;
   border: none;
+  border-radius: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
-/* Estilo para los botones secundarios */
-.btn-secondary-custom {
-  border-color: #cbd5e1; /* gray-300 */
-  color: #475569; /* gray-600 */
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
 }
 
-.btn-secondary-custom:hover {
-  background-color: #f1f5f9; /* gray-100 */
-  border-color: #94a3b8; /* gray-400 */
+.primary-btn:disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-icon {
+  font-size: 1.25rem !important;
+}
+
+.btn-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.primary-btn:active .btn-ripple {
+  width: 300px;
+  height: 300px;
+}
+
+/* ===== DIVIDER ===== */
+.divider-container {
+  display: flex;
+  align-items: center;
+  margin: 2rem 0 1.5rem;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+}
+
+.divider-text {
+  padding: 0 1rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== SECONDARY BUTTONS ===== */
+.secondary-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.secondary-btn {
+  height: 48px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: var(--itb-accent-blue);
+  color: var(--itb-accent-blue);
+  transform: translateY(-1px);
+}
+
+.secondary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 640px) {
+  .login-container {
+    padding: 1rem;
+  }
+  
+  .login-card {
+    padding: 2rem 1.5rem;
+  }
+  
+  .welcome-title {
+    font-size: 1.75rem;
+  }
+  
+  .secondary-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .welcome-icon {
+    width: 75px;
+    height: 75px;
+    padding: 10px;
+  }
+  
+  .welcome-title {
+    font-size: 1.9rem;
+  }
+  
+  .welcome-subtitle {
+    font-size: 0.95rem;
+  }
 }

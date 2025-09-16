@@ -1,16 +1,33 @@
 # 🎯 Bingo Virtual Educativo - ALED3
 
-## 📋 Información del Proyecto
+## 📚 Información Académica
 
+**Instituto:** Instituto Tecnológico Beltrán (ITB)  
+**Ubicación:** Av. Belgrano 1191, Avellaneda – Buenos Aires – Argentina  
+**Contacto:** (+54.11) 4265.0247 / 4265.0342 / 4203.0134  
+**Email:** informes@ibeltran.com.ar  
+**Web:** www.ibeltran.com.ar  
 **Materia:** Algoritmos y Estructuras de Datos III (ALED3)  
 **Profesor:** Sebastián Saldivar  
-**Alumnos:** Julián Manuel Cancelo & Nicolás Otero  
-**Carrera:** Tecnicatura Superior en Análisis de Sistemas - 3er año, 1era comisión TN  
-**Tecnología:** Angular 17 + Node.js + Socket.IO
+**Año Académico:** 2025  
 
-## 🎮 Descripción
+## 👥 Autores del Proyecto
 
-Aplicación web de bingo virtual multijugador desarrollada como proyecto final para la materia ALED3. Implementa todos los conceptos y patrones de diseño requeridos, incluyendo algoritmos de búsqueda, ordenamiento, estructuras de datos avanzadas y programación reactiva.
+- **Julián Manuel Cancelo** - Estudiante de Tecnicatura en Sistemas - ITB  
+  📧 juliancancelo@gmail.com
+- **Nicolás Otero** - Estudiante de Tecnicatura en Sistemas - ITB  
+  📧 nicolasotero@gmail.com
+
+## 🎮 Descripción del Proyecto
+
+Aplicación web interactiva de bingo multijugador desarrollada como **trabajo final** para la materia ALED3. El proyecto implementa patrones de diseño avanzados, algoritmos de estructuras de datos complejas y comunicación en tiempo real mediante WebSockets.
+
+### 🎯 Objetivos Académicos
+
+- ✅ **Implementación de Estructuras de Datos:** Arrays multidimensionales, colas, pilas, y estructuras personalizadas
+- ✅ **Algoritmos de Búsqueda y Ordenamiento:** Búsqueda lineal, filtrado avanzado, ordenamiento de estadísticas
+- ✅ **Patrones de Diseño:** Singleton, Observer, Factory, Strategy aplicados en contexto real
+- ✅ **Análisis de Complejidad:** Documentación detallada de complejidad temporal y espacial
 
 ## 🏗️ Arquitectura y Patrones Implementados
 

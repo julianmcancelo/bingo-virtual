@@ -27,8 +27,11 @@ export const routes: Routes = [
   },
   {
     path: 'bingo',
-    loadComponent: () => import('./app.component').then(m => m.AppComponent),
-    title: 'Bingo Virtual - ALED3'
+    loadComponent: () => import('./components/bingo-game/bingo-game.component').then(m => m.BingoGameComponent)
+  },
+  {
+    path: 'about',
+    loadComponent: () => import('./components/about/about.component').then(m => m.AboutComponent)
   },
   {
     path: 'auth',

@@ -1,52 +1,66 @@
-<div class="w-full max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
-  <div class="text-center mb-8">
-    <h2 class="text-3xl sm:text-4xl font-bold text-[var(--itb-dark-blue)] mb-2">¡Te damos la bienvenida!</h2>
-    <p class="text-gray-500">Ingresa como invitado para unirte a una partida.</p>
+<div class="login-container">
+  <!-- Decorative background elements -->
+  <div class="bg-decoration"></div>
+  <div class="bg-decoration-2"></div>
+  
+  <div class="login-card">
+    <!-- Header with animated icon -->
+    <div class="login-header">
+      <div class="welcome-icon">
+        <img src="assets/img/logo.png" alt="Bingo Logo" class="logo-image">
+      </div>
+      <h2 class="welcome-title">¡Te damos la bienvenida!</h2>
+      <p class="welcome-subtitle">Ingresa como invitado para unirte a una partida de bingo educativo</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="iniciarComoInvitado()" class="login-form">
+      <!-- Animated input field -->
+      <div class="input-container">
+        <mat-form-field appearance="outline" class="custom-input">
+          <mat-label>Nombre de Invitado</mat-label>
+          <input 
+            matInput 
+            formControlName="nombreJugador"
+            type="text" 
+            placeholder="Ej: SuperJugador123" 
+            (keyup.enter)="iniciarComoInvitado()"
+            [class.mat-form-field-invalid]="hasFieldError('nombreJugador')">
+          <mat-icon matSuffix class="input-icon">person</mat-icon>
+          <mat-error *ngIf="hasFieldError('nombreJugador')">
+            {{ getFieldError('nombreJugador') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Animated primary button -->
+      <button 
+        mat-raised-button 
+        type="submit"
+        [disabled]="!loginForm.valid" 
+        class="primary-btn">
+        <mat-icon class="btn-icon">play_arrow</mat-icon>
+        <span>Iniciar como Invitado</span>
+        <div class="btn-ripple"></div>
+      </button>
+
+      <!-- Elegant divider -->
+      <div class="divider-container">
+        <div class="divider-line"></div>
+        <span class="divider-text">O inicia sesión (próximamente)</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- Secondary buttons with hover effects -->
+      <div class="secondary-buttons">
+        <button mat-stroked-button (click)="proximamente()" class="secondary-btn" disabled>
+          <mat-icon class="btn-icon">login</mat-icon>
+          <span>Iniciar Sesión</span>
+        </button>
+        <button mat-stroked-button (click)="proximamente()" class="secondary-btn" disabled>
+          <mat-icon class="btn-icon">person_add</mat-icon>
+          <span>Registrarse</span>
+        </button>
+      </div>
+    </form>
   </div>
-
-  <form [formGroup]="loginForm" (ngSubmit)="iniciarComoInvitado()" class="space-y-6">
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Nombre de Invitado</mat-label>
-      <input 
-        matInput 
-        formControlName="nombreJugador"
-        type="text" 
-        placeholder="Ej: SuperJugador123" 
-        (keyup.enter)="iniciarComoInvitado()"
-        [class.mat-form-field-invalid]="hasFieldError('nombreJugador')">
-      <mat-icon matSuffix class="text-gray-400">person</mat-icon>
-      <mat-error *ngIf="hasFieldError('nombreJugador')">
-        {{ getFieldError('nombreJugador') }}
-      </mat-error>
-    </mat-form-field>
-
-    <button 
-      mat-raised-button 
-      type="submit"
-      [disabled]="!loginForm.valid" 
-      class="btn-primary-gradient w-full !py-4 !text-lg !rounded-lg shadow-md hover:shadow-lg transition-shadow">
-      <mat-icon>play_arrow</mat-icon>
-      <span class="ml-2">Iniciar como Invitado</span>
-    </button>
-
-    <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-200"></div>
-        </div>
-        <div class="relative flex justify-center text-sm">
-            <span class="px-3 bg-white text-gray-400">O inicia sesión (próximamente)</span>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <button mat-stroked-button (click)="proximamente()" class="btn-secondary-custom w-full !py-3 !rounded-lg" disabled>
-        <mat-icon>login</mat-icon>
-        <span class="ml-2">Iniciar Sesión</span>
-      </button>
-      <button mat-stroked-button (click)="proximamente()" class="btn-secondary-custom w-full !py-3 !rounded-lg" disabled>
-        <mat-icon>person_add</mat-icon>
-        <span class="ml-2">Registrarse</span>
-      </button>
-    </div>
-  </form>
 </div>

@@ -1,41 +1,115 @@
-<div class="w-full max-w-2xl mx-auto">
-  <div class="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-    <div>
-      <h2 class="text-xl sm:text-2xl font-bold text-[var(--itb-dark-blue)]">Sala: {{ salaActual?.nombre }}</h2>
-      <p class="text-gray-500">Comparte el ID para que otros se unan:</p>
-      <div class="mt-2 flex items-center bg-[var(--background-light-gray)] border border-[var(--border-color)] rounded-md px-3 py-2">
-        <span class="font-mono text-[var(--itb-dark-blue)]">{{ salaActual?.id }}</span>
-        <button (click)="copiarIdSala()" class="ml-4 text-gray-500 hover:text-[var(--itb-accent-blue)] transition">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" /><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2H6zm8 2V5a1 1 0 00-1-1H7a1 1 0 00-1 1v.083l.083.083A1.5 1.5 0 018.5 7h3a1.5 1.5 0 011.414-1.917L14 5.083V5z" /></svg>
+<div class="sala-container">
+  <!-- Decorative background elements -->
+  <div class="bg-decoration"></div>
+  <div class="bg-decoration-2"></div>
+  
+  <div class="sala-card">
+    <!-- Header with room info -->
+    <div class="sala-header">
+      <div class="room-info">
+        <div class="welcome-icon">
+          <img src="assets/img/logo.png" alt="Bingo Logo" class="logo-image">
+        </div>
+        <div class="room-details">
+          <h2 class="room-title">{{ salaActual?.nombre }}</h2>
+          <p class="room-subtitle">Comparte el ID para que otros se unan</p>
+          <div class="room-id-container">
+            <div class="room-id-display">
+              <span class="room-id-text">{{ salaActual?.id }}</span>
+              <button (click)="copiarIdSala()" class="copy-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                  <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2H6zm8 2V5a1 1 0 00-1-1H7a1 1 0 00-1 1v.083l.083.083A1.5 1.5 0 018.5 7h3a1.5 1.5 0 011.414-1.917L14 5.083V5z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button (click)="onVolverAlLobby()" class="back-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+        Volver al Lobby
+      </button>
+    </div>
+
+    <!-- Main content area with players and chat -->
+    <div class="content-grid">
+      <!-- Players section -->
+      <div class="players-section">
+        <h3 class="section-title">Jugadores Conectados ({{ jugadores.length }})</h3>
+        <div class="players-list">
+          <div *ngFor="let jugador of jugadores" class="player-item">
+            <div class="player-avatar">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <span class="player-name">{{ jugador.nombre }}</span>
+            <span *ngIf="jugador.id === jugadorActual?.id" class="player-badge">(Tú)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat section -->
+      <div class="chat-section">
+        <h3 class="section-title">Chat de la Sala</h3>
+        <div class="chat-container">
+          <div class="chat-messages" #chatMessages>
+            <div *ngFor="let mensaje of mensajesChat" class="mensaje" [ngClass]="{'mensaje-propio': mensaje.jugador === jugadorActual?.nombre}">
+              <div class="mensaje-autor">{{ mensaje.jugador }}</div>
+              <div class="mensaje-hora">{{ formatTime(mensaje.timestamp) }}</div>
+              <div class="mensaje-contenido">{{ mensaje.mensaje }}</div>
+            </div>
+            <div *ngIf="mensajesChat.length === 0" class="empty-chat">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.959 8.959 0 01-4.906-1.471L3 21l2.471-5.094A8.959 8.959 0 013 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
+              </svg>
+              <p>¡Sé el primero en enviar un mensaje!</p>
+            </div>
+          </div>
+          <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+              <input 
+                type="text" 
+                [(ngModel)]="nuevoMensaje" 
+                (keyup.enter)="enviarMensaje()"
+                placeholder="Escribe un mensaje..."
+                class="chat-input"
+                maxlength="200">
+              <button (click)="enviarMensaje()" [disabled]="!nuevoMensaje.trim()" class="send-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game controls -->
+    <div class="game-controls">
+      <div *ngIf="esCreadorSala" class="host-controls">
+        <button (click)="onIniciarJuego()" 
+                [disabled]="jugadores.length < 1" 
+                class="primary-btn start-game-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.01M15 10h1.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Iniciar Juego</span>
+          <div class="btn-ripple"></div>
         </button>
+        <p *ngIf="jugadores.length < 1" class="control-hint">Se necesita al menos 1 jugador para comenzar.</p>
+      </div>
+
+      <div *ngIf="!esCreadorSala" class="waiting-controls">
+        <div class="waiting-indicator">
+          <div class="loading-spinner"></div>
+          <p class="waiting-text">Esperando a que el anfitrión inicie el juego...</p>
+        </div>
       </div>
     </div>
-    <button (click)="onVolverAlLobby()" class="text-gray-500 hover:text-[var(--itb-dark-blue)] transition flex items-center gap-1 text-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-      Volver al Lobby
-    </button>
-  </div>
-
-  <div class="mb-6">
-    <h3 class="text-lg font-semibold text-[var(--itb-dark-blue)] mb-3">Jugadores Conectados ({{ jugadores.length }})</h3>
-    <div class="bg-[var(--background-light-gray)] border border-[var(--border-color)] p-4 rounded-md space-y-2 max-h-48 overflow-y-auto">
-      <div *ngFor="let jugador of jugadores" class="flex items-center justify-between p-2 rounded-md bg-white/80 animate-fade-in">
-        <span class="font-medium text-gray-700">{{ jugador.nombre }}</span>
-        <span *ngIf="jugador.id === jugadorActual?.id" class="text-xs font-semibold text-[var(--itb-accent-blue)] bg-blue-100 px-2 py-1 rounded-full">(Tú)</span>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="esCreadorSala" class="text-center mt-6">
-    <button (click)="onIniciarJuego()" 
-            [disabled]="jugadores.length < 1" 
-            class="w-full bg-[var(--itb-accent-blue)] text-white font-bold py-2 px-4 rounded-md hover:opacity-90 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
-      Iniciar Juego
-    </button>
-    <p *ngIf="jugadores.length < 1" class="text-sm text-gray-500 mt-2">Se necesita al menos 1 jugador para comenzar.</p>
-  </div>
-
-  <div *ngIf="!esCreadorSala" class="text-center mt-6">
-    <p class="text-gray-500">Esperando a que el anfitrión inicie el juego...</p>
   </div>
 </div>
