@@ -29,11 +29,11 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatRippleModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatStepperModule } from '@angular/material/stepper';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -52,7 +52,6 @@ import { LoginComponent } from './components/login/login.component';
     CommonModule,
     RouterModule,
     RouterLink,
-    RouterLinkActive,
     FormsModule,
     MatToolbarModule,
     MatCardModule,
@@ -70,10 +69,7 @@ import { LoginComponent } from './components/login/login.component';
     MatTabsModule,
     MatExpansionModule,
     MatListModule,
-    MatRippleModule,
-    MatSlideToggleModule,
     MatMenuModule,
-    MatStepperModule,
     LoginComponent,
     LobbyComponent,
     SalaComponent,
