@@ -19,6 +19,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDividerModule } from '@angular/material/divider';
 import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -39,11 +40,17 @@ import { JuegoComponent } from '../juego/juego.component';
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
+    MatToolbarModule,
+    MatCardModule,
+    MatProgressSpinnerModule,
+    MatBadgeModule,
     MatTooltipModule,
+    MatSnackBarModule,
+    MatDividerModule,
+    RouterLink,
     LobbyComponent,
     SalaComponent,
     JuegoComponent,
@@ -146,9 +153,26 @@ import { JuegoComponent } from '../juego/juego.component';
             <mat-icon>settings</mat-icon>
             <span>Ajustes del Juego</span>
           </button>
+          <button mat-menu-item (click)="mostrarEstadisticas()">
+            <mat-icon>bar_chart</mat-icon>
+            <span>Estadísticas</span>
+          </button>
+          <button mat-menu-item (click)="mostrarAyuda()">
+            <mat-icon>help_outline</mat-icon>
+            <span>Cómo Jugar</span>
+          </button>
+          <button mat-menu-item (click)="cambiarTema()">
+            <mat-icon>palette</mat-icon>
+            <span>Cambiar Tema</span>
+          </button>
           <button mat-menu-item (click)="mostrarInfoProyecto()">
             <mat-icon>info_outline</mat-icon>
             <span>Info del Proyecto</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="volverAlLobby()">
+            <mat-icon>exit_to_app</mat-icon>
+            <span>Salir del Juego</span>
           </button>
         </mat-menu>
       </div>
@@ -568,6 +592,76 @@ export class BingoGameComponent implements OnInit, OnDestroy {
       `,
       icon: 'info',
       confirmButtonText: 'Cerrar'
+    });
+  }
+
+  mostrarEstadisticas(): void {
+    const totalJugados = this.numerosSorteados.length;
+    const numerosMarcados = this.contarNumerosMarcados();
+    const lineasCompletas = this.contarLineasCompletas();
+    
+    Swal.fire({
+      title: 'Estadísticas del Juego',
+      html: `
+        <div class="text-left">
+          <p><strong>Números sorteados:</strong> ${totalJugados} / 90</p>
+          <p><strong>Números marcados:</strong> ${numerosMarcados} / 15</p>
+          <p><strong>Líneas completadas:</strong> ${lineasCompletas}</p>
+          <p><strong>Progreso:</strong> ${Math.round((numerosMarcados / 15) * 100)}%</p>
+          <hr style="margin: 15px 0;">
+          <p><strong>Estado del juego:</strong> ${this.hayBingo ? '🎉 ¡BINGO!' : lineasCompletas === 2 ? '🔥 Doble Línea' : lineasCompletas === 1 ? '⭐ Una Línea' : '🎯 En progreso'}</p>
+        </div>
+      `,
+      icon: 'info',
+      confirmButtonText: 'Cerrar'
+    });
+  }
+
+  mostrarAyuda(): void {
+    Swal.fire({
+      title: '¿Cómo Jugar Bingo?',
+      html: `
+        <div class="text-left">
+          <h4><strong>Objetivo:</strong></h4>
+          <p>Marca los números de tu cartón cuando sean cantados.</p>
+          
+          <h4><strong>Reglas:</strong></h4>
+          <ul style="text-align: left; margin-left: 20px;">
+            <li>Solo puedes marcar números que ya fueron sorteados</li>
+            <li>Cada cartón tiene 15 números distribuidos en 3 filas</li>
+            <li>Cada fila tiene 5 números y 4 espacios vacíos</li>
+          </ul>
+          
+          <h4><strong>Formas de ganar:</strong></h4>
+          <ul style="text-align: left; margin-left: 20px;">
+            <li><strong>Línea:</strong> Completa una fila horizontal</li>
+            <li><strong>Doble Línea:</strong> Completa dos filas horizontales</li>
+            <li><strong>BINGO:</strong> Completa todo el cartón (15 números)</li>
+          </ul>
+        </div>
+      `,
+      icon: 'question',
+      confirmButtonText: 'Entendido'
+    });
+  }
+
+  cambiarTema(): void {
+    Swal.fire({
+      title: 'Cambiar Tema',
+      text: 'Esta función estará disponible en una próxima versión.',
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Modo Oscuro (Próximamente)',
+      cancelButtonText: 'Cerrar',
+      confirmButtonColor: '#6c757d'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.snackBar.open('Función en desarrollo', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
+        });
+      }
     });
   }
 }
