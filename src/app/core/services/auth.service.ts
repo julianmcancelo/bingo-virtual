@@ -19,9 +19,10 @@
  * - Map<string, any>: Para cache de permisos
  */
 
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
+import { isPlatformBrowser } from '@angular/common';
 
 export interface Usuario {
   id: string;
@@ -48,7 +49,8 @@ export interface AuthResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  
+  private isBrowser: boolean;
+
   /**
    * ESTADO REACTIVO DEL SERVICIO
    * 
@@ -68,7 +70,8 @@ export class AuthService {
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   public token$ = this.tokenSubject.asObservable();
 
-  constructor() {
+  constructor(@Inject(PLATFORM_ID) platformId: Object) {
+    this.isBrowser = isPlatformBrowser(platformId);
     // Verificar si hay una sesión guardada al inicializar
     this.checkStoredSession();
   }
@@ -264,6 +267,8 @@ export class AuthService {
    * VERIFICAR SESIÓN ALMACENADA
    */
   private checkStoredSession(): void {
+    if (!this.isBrowser) return;
+    
     const storedUser = localStorage.getItem('currentUser');
     const storedToken = localStorage.getItem('authToken');
     
@@ -291,7 +296,8 @@ export class AuthService {
    * @param response - Respuesta de autenticación
    */
   private saveToStorage(response: AuthResponse): void {
-    // Convertir Set a Array para serialización
+    if (!this.isBrowser) return;
+    
     const userToStore = {
       ...response.user,
       roles: Array.from(response.user.roles)
@@ -306,6 +312,8 @@ export class AuthService {
    * LIMPIAR ALMACENAMIENTO LOCAL
    */
   private clearStorage(): void {
+    if (!this.isBrowser) return;
+    
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
