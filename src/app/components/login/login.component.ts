@@ -23,6 +23,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { VersionService } from '../../services/version.service';
 
 @Component({
   selector: 'app-login',
@@ -49,7 +50,10 @@ export class LoginComponent implements OnInit {
    */
   loginForm!: FormGroup;
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    public versionService: VersionService
+  ) {}
 
   /**
    * INICIALIZACIÓN DEL COMPONENTE

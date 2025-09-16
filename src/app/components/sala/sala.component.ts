@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Jugador, Sala, MensajeChat } from '../../services/socket.service';
 import { SocketService } from '../../services/socket.service';
+import { VersionService } from '../../services/version.service';
 
 @Component({
   selector: 'app-sala',
@@ -31,7 +32,10 @@ export class SalaComponent implements AfterViewChecked {
   nuevoMensaje: string = '';
   private shouldScrollToBottom = false;
 
-  constructor(private socketService: SocketService) {}
+  constructor(
+    private socketService: SocketService,
+    public versionService: VersionService
+  ) {}
 
   // Determina si el jugador actual es el creador de la sala
   get esCreadorSala(): boolean {

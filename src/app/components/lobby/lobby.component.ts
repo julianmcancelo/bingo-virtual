@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
+import { VersionService } from '../../services/version.service';
 
 @Component({
   selector: 'app-lobby',
@@ -22,8 +23,10 @@ export class LobbyComponent implements OnInit {
 
   tab: 'crear' | 'unirse' = 'crear';
 
-    nombreSala = '';
+  nombreSala = '';
   salaIdUnirse = '';
+
+  constructor(public versionService: VersionService) {}
 
   ngOnInit(): void {
     // Al iniciar, el nombre del jugador se pre-carga si viene del login de invitado
