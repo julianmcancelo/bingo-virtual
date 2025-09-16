@@ -552,7 +552,7 @@ app.get('/stats', (req, res) => {
   res.json(stats);
 });
 
-const PORT = 3005;
+const PORT = 3000;
 
 const showMatrixAnimation = (callback) => {
   console.clear();
