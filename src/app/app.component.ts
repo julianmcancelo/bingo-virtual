@@ -10,6 +10,7 @@
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterModule, RouterLink, RouterLinkActive } from '@angular/router';
 
 // Angular Material Imports
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -48,7 +49,10 @@ import { LoginComponent } from './components/login/login.component';
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
+    RouterModule,
+    RouterLink,
+    RouterLinkActive,
     FormsModule,
     MatToolbarModule,
     MatCardModule,
@@ -66,8 +70,6 @@ import { LoginComponent } from './components/login/login.component';
     MatTabsModule,
     MatExpansionModule,
     MatListModule,
-    MatSidenavModule,
-    MatTooltipModule,
     MatRippleModule,
     MatSlideToggleModule,
     MatMenuModule,
@@ -120,7 +122,8 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     public socketService: SocketService,
     private settingsService: SettingsService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
+    public router: Router
   ) {
     // Inicialización básica sin operaciones pesadas
   }

@@ -254,4 +254,4 @@ Proyecto académico - Uso educativo únicamente.
 
 **Profesor:** Sebastián Saldivar  
 **Institución:** Tecnicatura Superior en Análisis de Sistemas  
-**Año:** 2024
+**Año:** 2025

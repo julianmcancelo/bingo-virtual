@@ -16,7 +16,13 @@ import { AuthGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/bingo',
+    loadComponent: () => import('./components/welcome/welcome.component').then(m => m.WelcomeComponent),
+    title: 'Bienvenido - Bingo Virtual',
+    pathMatch: 'full'
+  },
+  {
+    path: 'inicio',
+    redirectTo: '',
     pathMatch: 'full'
   },
   {
@@ -43,6 +49,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: '/bingo'
+    redirectTo: ''
   }
 ];
