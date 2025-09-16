@@ -19,7 +19,7 @@ import { Injectable } from '@angular/core';
 export class VersionService {
   
   // Versión actual de la aplicación
-  private readonly version = '1.1.0';
+  private readonly version = '1.2.0';
   private readonly buildDate = '2024-09-16';
   private readonly appName = 'Bingo Virtual Educativo';
 

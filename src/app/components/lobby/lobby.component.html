@@ -71,4 +71,12 @@
       <span class="version-text">{{ versionService.getFormattedVersion() }}</span>
     </div>
   </div>
+
+  <!-- Chat Flotante Global -->
+  <app-chat-flotante 
+    *ngIf="nombreJugador"
+    salaId="lobby-global"
+    [jugadorActual]="{id: 'lobby-user', nombre: nombreJugador, puntuacion: 0, lineasCompletadas: 0}"
+    [posicion]="'bottom-right'">
+  </app-chat-flotante>
 </div>

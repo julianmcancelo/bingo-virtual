@@ -8,11 +8,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { VersionService } from '../../services/version.service';
+import { ChatFlotanteComponent } from '../shared/chat-flotante/chat-flotante.component';
 
 @Component({
   selector: 'app-lobby',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatTabsModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatTabsModule, MatIconModule, ChatFlotanteComponent],
   templateUrl: './lobby.component.html',
   styleUrls: ['./lobby.component.css']
 })

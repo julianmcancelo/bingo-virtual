@@ -140,6 +140,7 @@ import { JuegoComponent } from '../juego/juego.component';
 
       <!-- Floating Action Buttons -->
       <div class="fixed bottom-6 left-6 z-40 flex flex-col gap-4">
+        
         <!-- Menu Button -->
         <button mat-fab color="primary" [matMenuTriggerFor]="mainMenu" matTooltip="Opciones">
           <mat-icon>menu</mat-icon>
@@ -183,7 +184,7 @@ import { JuegoComponent } from '../juego/juego.component';
         *ngIf="salaActual && jugadorActual"
         [salaId]="salaActual.id"
         [jugadorActual]="jugadorActual"
-        posicion="bottom-right">
+        [posicion]="'bottom-left'">
       </app-chat-flotante>
     </div>
   `,
