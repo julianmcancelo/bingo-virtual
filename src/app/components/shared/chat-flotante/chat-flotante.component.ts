@@ -66,12 +66,14 @@ export class ChatFlotanteComponent implements OnInit, OnDestroy, AfterViewChecke
   private inicializarSubscripciones(): void {
     // Suscribirse a los mensajes
     const mensajesSub = this.chatService.getMensajes().subscribe(mensajes => {
+      console.log('Chat: Mensajes recibidos:', mensajes);
       this.mensajes = mensajes;
       this.shouldScrollToBottom = true;
     });
 
     // Suscribirse al estado del chat
     const chatAbiertoSub = this.chatService.isChatAbierto().subscribe(abierto => {
+      console.log('Chat: Estado abierto:', abierto);
       this.chatAbierto = abierto;
       if (abierto) {
         this.shouldScrollToBottom = true;
@@ -80,6 +82,7 @@ export class ChatFlotanteComponent implements OnInit, OnDestroy, AfterViewChecke
 
     // Suscribirse a mensajes no leídos
     const noLeidosSub = this.chatService.getMensajesNoLeidos().subscribe(count => {
+      console.log('Chat: Mensajes no leídos:', count);
       this.mensajesNoLeidos = count;
     });
 
@@ -98,7 +101,7 @@ export class ChatFlotanteComponent implements OnInit, OnDestroy, AfterViewChecke
    */
   enviarMensaje(): void {
     if (this.nuevoMensaje.trim() && this.salaId && this.jugadorActual) {
-      this.chatService.enviarMensaje(this.salaId, this.jugadorActual.id, this.nuevoMensaje);
+      this.chatService.enviarMensaje(this.salaId, this.jugadorActual.nombre, this.nuevoMensaje);
       this.nuevoMensaje = '';
     }
   }

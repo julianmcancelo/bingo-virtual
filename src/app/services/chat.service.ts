@@ -42,6 +42,7 @@ export class ChatService {
   private inicializarEventosSocket(): void {
     // Escuchar mensajes entrantes
     this.socketService.mensajeRecibido$.subscribe((mensaje: MensajeChat) => {
+      console.log('ChatService: Mensaje recibido del socket:', mensaje);
       this.agregarMensaje(mensaje);
       
       // Incrementar contador si el chat está cerrado
@@ -52,6 +53,7 @@ export class ChatService {
 
     // Limpiar mensajes cuando se cambia de sala
     this.socketService.salaActualizada$.subscribe(() => {
+      console.log('ChatService: Sala actualizada, limpiando mensajes');
       this.limpiarMensajes();
     });
   }
@@ -62,9 +64,10 @@ export class ChatService {
    * @param jugadorId - ID del jugador
    * @param mensaje - Contenido del mensaje
    */
-  enviarMensaje(salaId: string, jugadorId: string, mensaje: string): void {
+  enviarMensaje(salaId: string, jugadorNombre: string, mensaje: string): void {
     if (mensaje.trim()) {
-      this.socketService.enviarMensaje(salaId, jugadorId, mensaje.trim());
+      console.log('ChatService: Enviando mensaje:', { salaId, jugadorNombre, mensaje });
+      this.socketService.enviarMensaje(salaId, jugadorNombre, mensaje.trim());
     }
   }
 

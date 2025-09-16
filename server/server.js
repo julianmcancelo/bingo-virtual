@@ -493,7 +493,11 @@ io.on('connection', (socket) => {
     
     if (!sala) return;
 
-    const jugador = sala.jugadores.find(j => j.id === jugadorId);
+    // Buscar jugador por ID o por nombre (compatibilidad)
+    let jugador = sala.jugadores.find(j => j.id === jugadorId);
+    if (!jugador) {
+      jugador = sala.jugadores.find(j => j.nombre === jugadorId);
+    }
     if (!jugador) return;
 
     const mensajeChat = {
