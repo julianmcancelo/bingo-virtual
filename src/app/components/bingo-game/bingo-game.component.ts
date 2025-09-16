@@ -20,6 +20,8 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -50,6 +52,8 @@ import { JuegoComponent } from '../juego/juego.component';
     MatTooltipModule,
     MatSnackBarModule,
     MatDividerModule,
+    MatSlideToggleModule,
+    MatDialogModule,
     RouterLink,
     LobbyComponent,
     SalaComponent,
@@ -252,7 +256,9 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     public socketService: SocketService,
     private settingsService: SettingsService,
     public router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private viewContainer: ViewContainerRef,
+    private dialog: MatDialog
   ) {}
 
   // Estado del juego
@@ -273,13 +279,18 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   jugadores$ = this.socketService.jugadores$;
   mensajesChat$ = this.socketService.mensajesChat$;
   
-  // Datos del juego
-  carton: CeldaBingo[][] = [];
+  // Estado del juego
+  hayBingo: boolean = false;
   numeroActual: number | null = null;
   numerosSorteados: number[] = [];
-  hayBingo: boolean = false;
+  carton: CeldaBingo[][] = [];
   
-  // Chat modal
+  // Control de eventos únicos por juego
+  lineaYaCantada: boolean = false;
+  dobleLineaYaCantada: boolean = false;
+  bingoYaCantado: boolean = false;
+  
+  // Chat
   chatAbierto: boolean = false;
   nuevoMensaje: string = '';
   
@@ -329,9 +340,12 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     this.suscripciones.push(
       this.socketService.juegoIniciado$.subscribe((data: any) => {
         if (data) {
-          console.log('[BINGO-GAME] Juego iniciado, generando cartón...');
-          this.generarCarton();
           this.vistaActual = 'juego';
+          this.generarCarton();
+          // Resetear también el estado de números sorteados
+          this.numerosSorteados = [];
+          this.numeroActual = null;
+          console.log('[BINGO-GAME] Juego iniciado, cartón generado, estado reseteado');
         }
       })
     );
@@ -376,6 +390,12 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   // Generar cartón de bingo oficial (3x9 con 5 números por fila)
   generarCarton(): void {
     this.carton = [];
+    
+    // Resetear flags de eventos únicos al generar nuevo cartón
+    this.lineaYaCantada = false;
+    this.dobleLineaYaCantada = false;
+    this.bingoYaCantado = false;
+    this.hayBingo = false;
     
     // Generar números disponibles por columna
     const numerosPorColumna: number[][] = [];
@@ -448,15 +468,18 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     const lineasCompletas = this.contarLineasCompletas();
     const totalNumerosMarcados = this.contarNumerosMarcados();
     
-    if (totalNumerosMarcados === 15) {
-      // BINGO - Cartón completo
+    if (totalNumerosMarcados === 15 && !this.bingoYaCantado) {
+      // BINGO - Cartón completo (solo una vez por juego)
       this.hayBingo = true;
+      this.bingoYaCantado = true;
       this.mostrarNotificacionBingo('🎉 ¡BINGO!', 'Has completado todo el cartón. ¡Felicidades!', true);
-    } else if (lineasCompletas === 2) {
-      // Doble línea
+    } else if (lineasCompletas === 2 && !this.dobleLineaYaCantada) {
+      // Doble línea (solo una vez por juego)
+      this.dobleLineaYaCantada = true;
       this.mostrarNotificacionBingo('🔥 ¡DOBLE LÍNEA!', 'Has completado dos líneas. ¡Sigue así!', false);
-    } else if (lineasCompletas === 1) {
-      // Línea simple
+    } else if (lineasCompletas === 1 && !this.lineaYaCantada) {
+      // Línea simple (solo una vez por juego)
+      this.lineaYaCantada = true;
       this.mostrarNotificacionBingo('⭐ ¡LÍNEA!', 'Has completado una línea. ¡Continúa jugando!', false);
     }
   }
@@ -563,17 +586,55 @@ export class BingoGameComponent implements OnInit, OnDestroy {
       Swal.fire({
         title: 'Ajustes del Juego',
         html: `
-          <div class="text-left">
-            <p><strong>Números:</strong> 1 - 90</p>
-            <p><strong>Modo:</strong> Multijugador en tiempo real</p>
-            <p><strong>Tecnología:</strong> Socket.IO WebSockets</p>
+          <div class="text-left space-y-4">
+            <div>
+              <p><strong>Información del Juego:</strong></p>
+              <p>• Números: 1 - 90</p>
+              <p>• Modo: Multijugador en tiempo real</p>
+              <p>• Tecnología: Socket.IO WebSockets</p>
+            </div>
+            
             <hr style="margin: 15px 0;">
-            <p><strong>Narrador:</strong> ${configuracion.narradorHabilitado ? 'Activado' : 'Desactivado'}</p>
-            <p><strong>Marcado Automático:</strong> ${configuracion.marcadoAutomatico ? 'Activado' : 'Desactivado'}</p>
+            
+            <div>
+              <p><strong>Configuraciones:</strong></p>
+              <div style="margin: 10px 0;">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                  <input type="checkbox" id="narradorToggle" ${configuracion.narradorHabilitado ? 'checked' : ''}>
+                  <span>Narrador de números activado</span>
+                </label>
+              </div>
+              <div style="margin: 10px 0;">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                  <input type="checkbox" id="marcadoToggle" ${configuracion.marcadoAutomatico ? 'checked' : ''}>
+                  <span>Marcado automático de números</span>
+                </label>
+              </div>
+            </div>
           </div>
         `,
         icon: 'info',
-        confirmButtonText: 'Cerrar'
+        showCancelButton: true,
+        confirmButtonText: 'Guardar Cambios',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+          const narradorCheckbox = document.getElementById('narradorToggle') as HTMLInputElement;
+          const marcadoCheckbox = document.getElementById('marcadoToggle') as HTMLInputElement;
+          
+          return {
+            narradorHabilitado: narradorCheckbox?.checked || false,
+            marcadoAutomatico: marcadoCheckbox?.checked || false
+          };
+        }
+      }).then((result) => {
+        if (result.isConfirmed && result.value) {
+          this.settingsService.updateSettings(result.value);
+          this.snackBar.open('Configuración guardada', 'Cerrar', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom'
+          });
+        }
       });
     });
   }
@@ -600,6 +661,16 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     const numerosMarcados = this.contarNumerosMarcados();
     const lineasCompletas = this.contarLineasCompletas();
     
+    // Determinar estado actual basado en eventos únicos
+    let estadoJuego = '🎯 En progreso';
+    if (this.bingoYaCantado) {
+      estadoJuego = '🎉 ¡BINGO!';
+    } else if (this.dobleLineaYaCantada) {
+      estadoJuego = '🔥 Doble Línea';
+    } else if (this.lineaYaCantada) {
+      estadoJuego = '⭐ Una Línea';
+    }
+    
     Swal.fire({
       title: 'Estadísticas del Juego',
       html: `
@@ -609,7 +680,12 @@ export class BingoGameComponent implements OnInit, OnDestroy {
           <p><strong>Líneas completadas:</strong> ${lineasCompletas}</p>
           <p><strong>Progreso:</strong> ${Math.round((numerosMarcados / 15) * 100)}%</p>
           <hr style="margin: 15px 0;">
-          <p><strong>Estado del juego:</strong> ${this.hayBingo ? '🎉 ¡BINGO!' : lineasCompletas === 2 ? '🔥 Doble Línea' : lineasCompletas === 1 ? '⭐ Una Línea' : '🎯 En progreso'}</p>
+          <p><strong>Estado del juego:</strong> ${estadoJuego}</p>
+          <hr style="margin: 15px 0;">
+          <p><strong>Eventos cantados:</strong></p>
+          <p>• Línea: ${this.lineaYaCantada ? '✅ Cantada' : '⏳ Pendiente'}</p>
+          <p>• Doble Línea: ${this.dobleLineaYaCantada ? '✅ Cantada' : '⏳ Pendiente'}</p>
+          <p>• Bingo: ${this.bingoYaCantado ? '✅ Cantado' : '⏳ Pendiente'}</p>
         </div>
       `,
       icon: 'info',

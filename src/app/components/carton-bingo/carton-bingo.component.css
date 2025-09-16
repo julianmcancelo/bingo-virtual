@@ -4,7 +4,8 @@
 
 /* Estilos del cartón de bingo oficial */
 .carton-bingo {
-  max-width: 500px;
+  max-width: 600px;
+  width: 100%;
   margin: 0 auto;
   background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -12,9 +13,12 @@
 
 .celda {
   position: relative;
-  min-width: 45px;
-  min-height: 48px;
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  min-height: 60px;
   vertical-align: middle;
+  font-size: 18px;
 }
 
 .celda-numero {
@@ -66,15 +70,31 @@
 }
 
 /* Responsive design */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .carton-bingo {
     max-width: 100%;
-    padding: 16px;
+    padding: 12px;
   }
   
   .celda {
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+    min-height: 45px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .carton-bingo {
+    padding: 8px;
+  }
+  
+  .celda {
+    width: 35px;
+    height: 35px;
     min-width: 35px;
-    min-height: 40px;
+    min-height: 35px;
     font-size: 14px;
   }
 }
