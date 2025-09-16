@@ -12,10 +12,11 @@
  * - Facade: Interfaz simplificada para operaciones Socket.IO complejas
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { BehaviorSubject, Subject, Observable } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
-import { Observable, BehaviorSubject, Subject } from 'rxjs';
 
 /**
  * INTERFACES PARA TIPADO FUERTE
@@ -105,8 +106,11 @@ export class SocketService {
   public error$ = this.errorSubject.asObservable();
   public juegoIniciado$ = this.juegoIniciadoSubject.asObservable();
 
-  constructor() {
-    // La conexión se iniciará manualmente
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    // Solo conectar en el navegador, no durante SSR
+    if (isPlatformBrowser(this.platformId)) {
+      // La conexión se iniciará manualmente
+    }
   }
 
   /**
@@ -121,6 +125,12 @@ export class SocketService {
    * @description Inicia la conexión con el servidor Socket.IO y configura los listeners
    */
   public connect(): void {
+    // Solo conectar si estamos en el navegador
+    if (!isPlatformBrowser(this.platformId)) {
+      console.log('[SOCKET] Conexión omitida durante SSR');
+      return;
+    }
+
     if (this.socket?.connected) {
       console.log('[SOCKET] Ya conectado.');
       this.conectadoSubject.next(true);
