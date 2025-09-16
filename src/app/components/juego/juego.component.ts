@@ -25,6 +25,10 @@ export class JuegoComponent {
     this.toggleCeldaEvent.emit(event);
   }
 
+  showChangelog(): void {
+    this.versionService.showChangelogModal();
+  }
+
   numeroDisponible(numero: number): boolean {
     return this.numerosSorteados.includes(numero);
   }

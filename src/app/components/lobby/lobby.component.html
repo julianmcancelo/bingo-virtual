@@ -67,7 +67,7 @@
     </mat-tab-group>
     
     <!-- Version display -->
-    <div class="version-display">
+    <div class="version-display" (click)="showChangelog()">
       <span class="version-text">{{ versionService.getFormattedVersion() }}</span>
     </div>
   </div>

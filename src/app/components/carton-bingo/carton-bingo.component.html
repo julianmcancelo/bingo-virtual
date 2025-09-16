@@ -1,4 +1,9 @@
-<div class="relative bg-white rounded-lg shadow-lg border border-[var(--border-color)] p-2 font-sans">
+<div class="carton-bingo relative bg-white rounded-2xl shadow-xl border-2 border-blue-100 p-4 font-sans">
+  <!-- Header del cartón -->
+  <div class="text-center mb-3 pb-2 border-b-2 border-blue-100">
+    <h3 class="text-lg font-bold text-slate-700 tracking-wide">CARTÓN DE BINGO</h3>
+  </div>
+  
   <table class="w-full border-collapse">
     <tbody>
       <tr *ngFor="let fila of carton; let i = index">
@@ -7,15 +12,25 @@
             [style.background-image]="isLogoCell(i, j) ? 'url(assets/img/logo.png)' : null"
             [ngClass]="{
               'marcada': estaMarcada(celda),
-              'bg-white': celda && celda.numero !== null && !isLogoCell(i, j) && !estaMarcada(celda),
-              'bg-transparent border-none': !celda || celda.numero === null,
-              'cursor-pointer hover:bg-gray-100': celda && celda.numero !== null && !estaMarcada(celda) && !isLogoCell(i, j),
+              'celda-numero': celda && celda.numero !== null && !isLogoCell(i, j) && !estaMarcada(celda),
+              'celda-vacia': !celda || celda.numero === null,
+              'cursor-pointer': celda && celda.numero !== null && !estaMarcada(celda) && !isLogoCell(i, j),
               'bg-no-repeat bg-center bg-contain opacity-20': isLogoCell(i, j)
             }"
-            class="celda w-1/9 text-center h-10 sm:h-12 border border-[var(--border-color)] text-base sm:text-xl font-bold text-[var(--text-dark)] transition-all duration-200 ease-in-out">
-          <ng-container *ngIf="!isLogoCell(i, j)">{{ celda?.numero }}</ng-container>
+            class="celda text-center border text-lg font-bold text-slate-700 transition-all duration-300 ease-in-out">
+          <ng-container *ngIf="!isLogoCell(i, j)">
+            <span class="relative z-10">{{ celda?.numero }}</span>
+          </ng-container>
         </td>
       </tr>
     </tbody>
   </table>
+  
+  <!-- Footer con indicador de progreso -->
+  <div class="mt-3 pt-2 border-t border-blue-100">
+    <div class="flex justify-between items-center text-xs text-slate-500">
+      <span>Números marcados: {{ getNumerosMarcados() }}</span>
+      <span class="text-blue-600 font-semibold">¡Buena suerte!</span>
+    </div>
+  </div>
 </div>

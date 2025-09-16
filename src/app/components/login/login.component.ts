@@ -181,12 +181,10 @@ export class LoginComponent implements OnInit {
    * @complexity O(1) - Mostrar modal constante
    */
   proximamente(): void {
-    Swal.fire({
-      title: 'Próximamente',
-      text: 'Esta función estará disponible en futuras actualizaciones.',
-      icon: 'info',
-      confirmButtonColor: 'var(--itb-accent-blue)',
-      confirmButtonText: 'Entendido'
-    });
+    Swal.fire('Próximamente', 'Esta funcionalidad estará disponible en una futura actualización.', 'info');
+  }
+
+  showChangelog(): void {
+    this.versionService.showChangelogModal();
   }
 }

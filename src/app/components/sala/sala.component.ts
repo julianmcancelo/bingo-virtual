@@ -48,8 +48,12 @@ export class SalaComponent implements AfterViewChecked {
   }
 
   // Emite el evento para volver al lobby
-  onVolverAlLobby(): void {
+  volverAlLobby(): void {
     this.volverAlLobbyEvent.emit();
+  }
+
+  showChangelog(): void {
+    this.versionService.showChangelogModal();
   }
 
   // Lifecycle hook para scroll automático del chat

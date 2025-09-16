@@ -56,4 +56,16 @@ export class CartonBingoComponent implements OnChanges {
   isLogoCell(fila: number, columna: number): boolean {
     return this.logoCell !== null && this.logoCell.fila === fila && this.logoCell.columna === columna;
   }
+
+  getNumerosMarcados(): number {
+    let count = 0;
+    for (let i = 0; i < this.carton.length; i++) {
+      for (let j = 0; j < this.carton[i].length; j++) {
+        if (this.estaMarcada(this.carton[i][j])) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
 }

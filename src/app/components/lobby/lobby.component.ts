@@ -49,4 +49,8 @@ export class LobbyComponent implements OnInit {
     }
     this.unirseASalaEvent.emit({ salaId: this.salaIdUnirse, nombreJugador: this.nombreJugador });
   }
+
+  showChangelog(): void {
+    this.versionService.showChangelogModal();
+  }
 }
