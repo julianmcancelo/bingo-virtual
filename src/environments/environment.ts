@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
   // Reemplaza esta URL con la URL de tu servidor desplegado en Render
-  serverUrl: 'https://bingo-virtual.onrender.com'
+  serverUrl: 'https://bingo-virtual.onrender.com',
+  apiUrl: 'https://bingo-virtual.onrender.com/api'
 };

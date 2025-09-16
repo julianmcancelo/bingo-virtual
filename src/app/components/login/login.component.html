@@ -4,14 +4,27 @@
     <p class="text-gray-500">Ingresa como invitado para unirte a una partida.</p>
   </div>
 
-  <div class="space-y-6">
+  <form [formGroup]="loginForm" (ngSubmit)="iniciarComoInvitado()" class="space-y-6">
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Nombre de Invitado</mat-label>
-      <input matInput #nameInput="ngModel" required minlength="3" type="text" id="nombreJugador" [(ngModel)]="nombreJugador" name="nombreJugador" placeholder="Ej: SuperJugador123" (keyup.enter)="iniciarComoInvitado()">
+      <input 
+        matInput 
+        formControlName="nombreJugador"
+        type="text" 
+        placeholder="Ej: SuperJugador123" 
+        (keyup.enter)="iniciarComoInvitado()"
+        [class.mat-form-field-invalid]="hasFieldError('nombreJugador')">
       <mat-icon matSuffix class="text-gray-400">person</mat-icon>
+      <mat-error *ngIf="hasFieldError('nombreJugador')">
+        {{ getFieldError('nombreJugador') }}
+      </mat-error>
     </mat-form-field>
 
-    <button mat-raised-button (click)="iniciarComoInvitado()" [disabled]="!nameInput.valid" class="btn-primary-gradient w-full !py-4 !text-lg !rounded-lg shadow-md hover:shadow-lg transition-shadow">
+    <button 
+      mat-raised-button 
+      type="submit"
+      [disabled]="!loginForm.valid" 
+      class="btn-primary-gradient w-full !py-4 !text-lg !rounded-lg shadow-md hover:shadow-lg transition-shadow">
       <mat-icon>play_arrow</mat-icon>
       <span class="ml-2">Iniciar como Invitado</span>
     </button>
@@ -35,5 +48,5 @@
         <span class="ml-2">Registrarse</span>
       </button>
     </div>
-  </div>
+  </form>
 </div>
