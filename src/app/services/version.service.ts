@@ -20,7 +20,7 @@ import Swal from 'sweetalert2';
 export class VersionService {
   
   // Versión actual de la aplicación
-  private readonly version = '1.3.0';
+  private readonly version = '1.3.1';
   private readonly buildDate = '2024-09-16';
   private readonly appName = 'Bingo Virtual Educativo';
 
@@ -68,6 +68,16 @@ export class VersionService {
    */
   getChangelog() {
     return [
+      {
+        version: '1.3.1',
+        date: '2024-09-16',
+        title: 'Corrección de Errores',
+        changes: [
+          '🔧 Corregido error en botón "Volver al Lobby" del componente sala',
+          '✅ Solucionado problema de método inexistente onVolverAlLobby()',
+          '🎯 Mejorada estabilidad de la navegación entre componentes'
+        ]
+      },
       {
         version: '1.3.0',
         date: '2024-09-16',
