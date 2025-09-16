@@ -1,4 +1,4 @@
-<div class="w-full max-w-lg mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+<div class="w-full max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
   <div class="text-center mb-8">
     <h2 class="text-3xl sm:text-4xl font-bold text-[var(--itb-dark-blue)] mb-2">¡Te damos la bienvenida!</h2>
     <p class="text-gray-500">Ingresa como invitado para unirte a una partida.</p>
@@ -11,7 +11,7 @@
       <mat-icon matSuffix class="text-gray-400">person</mat-icon>
     </mat-form-field>
 
-    <button mat-raised-button color="primary" (click)="iniciarComoInvitado()" [disabled]="!nameInput.valid" class="w-full !py-4 !text-lg !rounded-lg shadow-md hover:shadow-lg transition-shadow">
+    <button mat-raised-button (click)="iniciarComoInvitado()" [disabled]="!nameInput.valid" class="btn-primary-gradient w-full !py-4 !text-lg !rounded-lg shadow-md hover:shadow-lg transition-shadow">
       <mat-icon>play_arrow</mat-icon>
       <span class="ml-2">Iniciar como Invitado</span>
     </button>
@@ -26,11 +26,11 @@
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <button mat-stroked-button (click)="proximamente()" class="w-full !py-3 !rounded-lg" disabled>
+      <button mat-stroked-button (click)="proximamente()" class="btn-secondary-custom w-full !py-3 !rounded-lg" disabled>
         <mat-icon>login</mat-icon>
         <span class="ml-2">Iniciar Sesión</span>
       </button>
-      <button mat-stroked-button (click)="proximamente()" class="w-full !py-3 !rounded-lg" disabled>
+      <button mat-stroked-button (click)="proximamente()" class="btn-secondary-custom w-full !py-3 !rounded-lg" disabled>
         <mat-icon>person_add</mat-icon>
         <span class="ml-2">Registrarse</span>
       </button>

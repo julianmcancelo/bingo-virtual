@@ -2,6 +2,7 @@
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
 @import 'sweetalert2/dist/sweetalert2.min.css';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,28 +10,34 @@
 
 /* Paleta de colores inspirada en el Instituto Tecnológico Beltrán */
 :root {
-  --itb-dark-blue: #2c3e50; /* Azul oscuro/gris del header */
-  --itb-accent-blue: #2980b9; /* Azul medio para acentos y botones */
-  --background-white: #ffffff; /* Fondo blanco limpio */
-  --background-light-gray: #f4f6f8; /* Gris muy claro para secciones */
-  --text-dark: #34495e;       /* Gris oscuro para texto */
-  --text-light: #ffffff;      /* Blanco para texto sobre fondos oscuros */
-  --border-color: #dce4ec;    /* Gris claro para bordes */
+  --itb-dark-blue: #0d2c4f;
+  --itb-light-blue: #205a8b;
+  --itb-accent-blue: #007bff;
+  --background-light: #f4f7fa;
+  --text-dark: #333;
+  --text-light: #f8f9fa;
+  --border-color: #dee2e6;
 }
 
-/* Estilo base del cuerpo */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--background-light);
+  color: var(--text-dark);
+}
+
 .glow-border {
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
+  border: 1px solid transparent;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.glow-border:hover {
+  border-color: var(--itb-accent-blue);
+  box-shadow: 0 0 15px rgba(0, 123, 255, 0.3);
 }
 
 body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(170deg, #e9f3f8 0%, #d8e6ee 100%);
-  color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -38,7 +45,6 @@ body {
 .mat-mdc-card-content {
     padding: 0 24px 24px 24px;
 }
-
 
 /* Tarjetas */
 .mat-mdc-card {
