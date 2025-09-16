@@ -329,10 +329,17 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     // Suscribirse a eventos del juego
     this.suscripciones.push(
       this.socketService.numeroSorteado$.subscribe((data: any) => {
-        if (data) {
+        if (data && data.numero) {
           this.numeroActual = data.numero;
           this.numerosSorteados = data.numerosSorteados || [];
           console.log('[BINGO-GAME] Número actualizado:', this.numeroActual, 'Total sorteados:', this.numerosSorteados.length);
+          
+          // Verificar si el marcado automático está habilitado
+          this.settingsService.settings$.subscribe(settings => {
+            if (settings.marcadoAutomatico) {
+              this.marcarAutomaticamente(data.numero);
+            }
+          }).unsubscribe(); // Unsubscribe inmediatamente para evitar memory leaks
         }
       })
     );
@@ -739,5 +746,22 @@ export class BingoGameComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+
+  // Método para marcar automáticamente números cuando salen
+  marcarAutomaticamente(numero: number): void {
+    if (!this.carton || this.carton.length === 0) return;
+    
+    for (let i = 0; i < this.carton.length; i++) {
+      for (let j = 0; j < this.carton[i].length; j++) {
+        const celda = this.carton[i][j];
+        if (celda && celda.numero === numero && !celda.esLibre && !celda.marcada) {
+          celda.marcada = true;
+          console.log('[BINGO-GAME] Número marcado automáticamente:', numero);
+          this.verificarCondicionesGanadoras();
+          return; // Salir después de marcar el número
+        }
+      }
+    }
   }
 }
