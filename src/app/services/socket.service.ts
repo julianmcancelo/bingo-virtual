@@ -72,7 +72,7 @@ export class SocketService {
    * 
    * @description Manejo de estado y conexión Socket.IO
    */
-  private socket!: Socket;
+  public socket!: Socket;
   private readonly SERVER_URL = environment.serverUrl;
   
   // BehaviorSubjects para estado reactivo
@@ -123,12 +123,15 @@ export class SocketService {
   public connect(): void {
     if (this.socket?.connected) {
       console.log('[SOCKET] Ya conectado.');
+      this.conectadoSubject.next(true);
       return;
     }
     console.log('[SOCKET] Intentando conectar a', this.SERVER_URL);
     this.socket = io(this.SERVER_URL, {
       transports: ['websocket', 'polling'],
-      autoConnect: true // Dejamos que se conecte automáticamente al llamar a connect()
+      autoConnect: true,
+      timeout: 20000,
+      forceNew: false
     });
     this.initializeSocketListeners();
   }
@@ -218,6 +221,19 @@ export class SocketService {
    * @param nombreJugador - Nombre del jugador que crea la sala
    */
   crearSala(nombreSala: string, nombreJugador: string): void {
+    if (!this.socket || !this.socket.connected) {
+      console.warn('[SOCKET] No conectado. Intentando conectar...');
+      this.connect();
+      // Esperamos un poco para que se establezca la conexión
+      setTimeout(() => {
+        if (this.socket && this.socket.connected) {
+          this.socket.emit('crearSala', { nombreSala, nombreJugador });
+        } else {
+          console.error('[SOCKET] No se pudo establecer conexión para crear sala');
+        }
+      }, 1000);
+      return;
+    }
     this.socket.emit('crearSala', { nombreSala, nombreJugador });
   }
 
@@ -228,6 +244,18 @@ export class SocketService {
    * @param nombreJugador - Nombre del jugador
    */
   unirseASala(salaId: string, nombreJugador: string): void {
+    if (!this.socket || !this.socket.connected) {
+      console.warn('[SOCKET] No conectado. Intentando conectar...');
+      this.connect();
+      setTimeout(() => {
+        if (this.socket && this.socket.connected) {
+          this.socket.emit('unirseASala', { salaId, nombreJugador });
+        } else {
+          console.error('[SOCKET] No se pudo establecer conexión para unirse a sala');
+        }
+      }, 1000);
+      return;
+    }
     this.socket.emit('unirseASala', { salaId, nombreJugador });
   }
 
@@ -237,6 +265,18 @@ export class SocketService {
    * @param salaId - ID de la sala
    */
   iniciarJuego(salaId: string): void {
+    if (!this.socket || !this.socket.connected) {
+      console.warn('[SOCKET] No conectado. Intentando conectar...');
+      this.connect();
+      setTimeout(() => {
+        if (this.socket && this.socket.connected) {
+          this.socket.emit('iniciarJuego', { salaId });
+        } else {
+          console.error('[SOCKET] No se pudo establecer conexión para iniciar juego');
+        }
+      }, 1000);
+      return;
+    }
     this.socket.emit('iniciarJuego', { salaId });
   }
 

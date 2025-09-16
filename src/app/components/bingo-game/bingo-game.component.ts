@@ -7,22 +7,30 @@
  * @descripcion Componente principal del juego de bingo
  */
 
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, OnInit, OnDestroy, ViewChild, ViewContainerRef, ComponentRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 
-import { SocketService, Jugador, Sala, MensajeChat, CeldaBingo } from '../../services/socket.service';
-import { SettingsService, GameSettings } from '../../services/settings.service';
+import { SocketService, Jugador, Sala, CeldaBingo } from '../../services/socket.service';
+import { SettingsService } from '../../services/settings.service';
+import { environment } from '../../../environments/environment';
+
+// Importaciones dinámicas de componentes
+import { LoginComponent } from '../login/login.component';
 import { LobbyComponent } from '../lobby/lobby.component';
 import { SalaComponent } from '../sala/sala.component';
 import { JuegoComponent } from '../juego/juego.component';
-import { LoginComponent } from '../login/login.component';
 
 @Component({
   selector: 'app-bingo-game',
@@ -155,9 +163,12 @@ import { LoginComponent } from '../login/login.component';
 })
 export class BingoGameComponent implements OnInit, OnDestroy {
   // Servicios inyectados
-  socketService = inject(SocketService);
-  settingsService = inject(SettingsService);
-  router = inject(Router);
+  constructor(
+    public socketService: SocketService,
+    private settingsService: SettingsService,
+    public router: Router,
+    private snackBar: MatSnackBar
+  ) {}
 
   // Estado del juego
   vistaActual: 'login' | 'lobby' | 'sala' | 'juego' = 'login';
@@ -169,6 +180,13 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   // Datos de la sala
   salaActual: Sala | null = null;
   jugadores: Jugador[] = [];
+  mensajesChat: any[] = [];
+  
+  // Observables
+  salaActual$ = this.socketService.salaActual$;
+  jugadorActual$ = this.socketService.jugadorActual$;
+  jugadores$ = this.socketService.jugadores$;
+  mensajesChat$ = this.socketService.mensajesChat$;
   
   // Datos del juego
   carton: CeldaBingo[][] = [];
@@ -180,39 +198,29 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   private suscripciones: Subscription[] = [];
 
   ngOnInit(): void {
-    this.inicializarSuscripciones();
+    // Conectar al servidor Socket.IO al inicializar el componente
+    this.socketService.connect();
+    
+    // Suscribirse a eventos específicos
+    this.socketService.salaActual$.subscribe(sala => {
+      this.salaActual = sala;
+    });
+    
+    this.socketService.jugadorActual$.subscribe((jugador: Jugador | null) => {
+      this.jugadorActual = jugador;
+    });
+    
+    this.socketService.jugadores$.subscribe(jugadores => {
+      this.jugadores = jugadores;
+    });
+    
+    this.socketService.mensajesChat$.subscribe((mensajes: any[]) => {
+      this.mensajesChat = mensajes;
+    });
   }
 
   ngOnDestroy(): void {
     this.suscripciones.forEach(sub => sub.unsubscribe());
-  }
-
-  private inicializarSuscripciones(): void {
-    // Suscripción a jugador actual
-    this.suscripciones.push(
-      this.socketService.jugadorActual$.subscribe(jugador => {
-        console.log('Jugador actual:', jugador);
-        this.jugadorActual = jugador;
-      })
-    );
-
-    // Suscripción a sala actual
-    this.suscripciones.push(
-      this.socketService.salaActual$.subscribe((sala: Sala | null) => {
-        console.log('Sala actual:', sala);
-        this.salaActual = sala;
-        if (sala) {
-          this.jugadores = sala.jugadores;
-        }
-      })
-    );
-
-    // Suscripción a mensajes de chat
-    this.suscripciones.push(
-      this.socketService.mensajesChat$.subscribe(mensajes => {
-        console.log('Mensajes de chat actualizados:', mensajes);
-      })
-    );
   }
 
   // Métodos del juego
@@ -263,23 +271,32 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   // Métodos del menú
   mostrarEstadoServidor(): void {
     const conectado = this.socketService.conectado$.value;
-    const serverUrl = 'http://localhost:3000';
+    const socketConnected = this.socketService.socket?.connected || false;
+    const socketExists = !!this.socketService.socket;
+    const serverUrl = environment.serverUrl;
+    
     Swal.fire({
       title: 'Estado del Servidor',
       html: `
         <div class="text-left">
-          <p><strong>Conexión:</strong> ${conectado ? '✅ Conectado' : '❌ Desconectado'}</p>
-          <p><strong>URL:</strong> ${serverUrl}</p>
-          <p><strong>Jugador:</strong> ${this.jugadorActual?.nombre || 'No identificado'}</p>
+          <p><strong>Conexión Socket:</strong> ${conectado ? '✅ Conectado' : '❌ Desconectado'}</p>
+          <p><strong>Socket Real:</strong> ${socketConnected ? '✅ Activo' : '❌ Inactivo'}</p>
+          <p><strong>Socket Existe:</strong> ${socketExists ? '✅ Sí' : '❌ No'}</p>
+          <p><strong>URL:</strong> <a href="${serverUrl}" target="_blank" style="color: #4f46e5;">${serverUrl}</a></p>
+          <p><strong>Plataforma:</strong> Render.com</p>
+          <p><strong>Estado:</strong> ${conectado && socketConnected ? '🟢 En línea' : '🔴 Fuera de línea'}</p>
+          <p><strong>Socket ID:</strong> ${this.socketService.socket?.id || 'No disponible'}</p>
+          <p><strong>Jugador:</strong> ${this.jugadorActual?.nombre || this.nombreJugadorInvitado || 'No identificado'}</p>
         </div>
       `,
-      icon: conectado ? 'success' : 'error',
-      confirmButtonText: 'Cerrar'
+      icon: (conectado && socketConnected) ? 'success' : 'error',
+      confirmButtonText: 'Cerrar',
+      footer: '<small>Servidor desplegado en Render - Bingo Virtual ALED3</small>'
     });
   }
 
   mostrarAjustes(): void {
-    this.settingsService.settings$.subscribe(settings => {
+    this.settingsService.settings$.subscribe((settings: any) => {
       const configuracion = settings;
       Swal.fire({
         title: 'Ajustes del Juego',
