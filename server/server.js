@@ -120,8 +120,15 @@ function generarCartonArgentino() {
       col = Math.floor(Math.random() * 9);
     } while (carton[fila][col] !== null || numerosPorFila[fila] >= 5 || numerosPorColumna[col] >= 2);
 
-    const min = col * 10 + (col === 0 ? 1 : 0);
-    const max = col * 10 + 9 + (col === 8 ? 1 : 0);
+    let min, max;
+    if (col === 0) {
+      min = 1; max = 10;  // Columna 1: 1-10
+    } else if (col === 8) {
+      min = 81; max = 90; // Columna 9: 81-90
+    } else {
+      min = (col * 10) + 1; // Columnas 2-8: 11-20, 21-30, ..., 71-80
+      max = (col + 1) * 10;
+    }
     let numero;
     do {
       numero = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -232,13 +239,13 @@ function crearSala(nombre) {
  */
 function sortearNumeroEnSala(salaId) {
   const sala = salas.get(salaId);
-  if (!sala || sala.juegoTerminado || sala.numerosSorteados.size >= 75) {
+  if (!sala || sala.juegoTerminado || sala.numerosSorteados.size >= 90) {
     return;
   }
 
   let numero;
   do {
-    numero = Math.floor(Math.random() * 75) + 1;
+    numero = Math.floor(Math.random() * 90) + 1;
   } while (sala.numerosSorteados.has(numero));
 
   sala.numerosSorteados.add(numero);
@@ -251,7 +258,15 @@ function sortearNumeroEnSala(salaId) {
     totalSorteados: sala.numerosSorteados.size
   });
 
-  console.log(`[SALA ${sala.nombre}] Número sorteado: ${numero} (Total: ${sala.numerosSorteados.size}/75)`);
+  // Formatear salida con colores y emojis
+  const progress = Math.round((sala.numerosSorteados.size / 90) * 100);
+  const progressBar = '█'.repeat(Math.floor(progress / 5)) + '░'.repeat(20 - Math.floor(progress / 5));
+  
+  console.log(chalk.cyan('🎱 ') + chalk.bold.white(`NÚMERO SORTEADO: `) + chalk.bold.yellow(numero));
+  console.log(chalk.gray('   ├─ ') + chalk.white(`Sala: `) + chalk.green(sala.nombre));
+  console.log(chalk.gray('   ├─ ') + chalk.white(`Progreso: `) + chalk.blue(`${sala.numerosSorteados.size}/90`) + chalk.gray(` (${progress}%)`));
+  console.log(chalk.gray('   └─ ') + chalk.white(`[${progressBar}] `) + chalk.cyan(`${progress}%`));
+  console.log('');
 }
 
 /**
@@ -286,7 +301,7 @@ function verificarBingoMultijugador(carton, jugadorId, salaId) {
  * @description Gestiona todas las conexiones y eventos de Socket.IO
  */
 io.on('connection', (socket) => {
-  console.log(`[CONEXIÓN] Nuevo cliente conectado: ${socket.id}`);
+  console.log(chalk.green('🔗 ') + chalk.bold.white('NUEVA CONEXIÓN: ') + chalk.cyan(socket.id));
 
   /**
    * EVENTO: Crear sala de juego
@@ -327,7 +342,7 @@ io.on('connection', (socket) => {
       jugador: jugador
     });
 
-    console.log(`[SALA CREADA] ${nombreSala} por ${nombreJugador}`);
+    console.log(chalk.magenta('🏠 ') + chalk.bold.white('SALA CREADA: ') + chalk.yellow(nombreSala) + chalk.gray(' por ') + chalk.green(nombreJugador));
   });
 
   /**
@@ -393,7 +408,7 @@ io.on('connection', (socket) => {
       jugador: jugador
     });
 
-    console.log(`[JUGADOR UNIDO] ${nombreJugador} se unió a ${sala.nombre}`);
+    console.log(chalk.blue('👤 ') + chalk.bold.white('JUGADOR UNIDO: ') + chalk.green(nombreJugador) + chalk.gray(' → ') + chalk.yellow(sala.nombre));
   });
 
   /**
@@ -420,7 +435,8 @@ io.on('connection', (socket) => {
       jugadores: sala.jugadores.length
     });
 
-    console.log(`[JUEGO INICIADO] Sala: ${sala.nombre} con ${sala.jugadores.length} jugadores`);
+    console.log(chalk.red('🎮 ') + chalk.bold.white('JUEGO INICIADO: ') + chalk.yellow(sala.nombre) + chalk.gray(' con ') + chalk.cyan(sala.jugadores.length) + chalk.gray(' jugadores'));
+    console.log(chalk.gray('   └─ ') + chalk.white('Sorteo automático cada 3 segundos'));
   });
 
   /**
@@ -456,7 +472,7 @@ io.on('connection', (socket) => {
           esGanador: sala.ganadores.length === 1
         });
 
-        console.log(`[BINGO] ${jugador.nombre} completó ${resultadoBingo.tipo} en sala ${sala.nombre}`);
+        console.log(chalk.red('🎉 ') + chalk.bold.white('¡BINGO! ') + chalk.green(jugador.nombre) + chalk.gray(' completó ') + chalk.yellow(resultadoBingo.tipo) + chalk.gray(' en ') + chalk.cyan(sala.nombre));
       }
     }
 
@@ -512,7 +528,7 @@ io.on('connection', (socket) => {
    * EVENTO: Desconexión de cliente
    */
   socket.on('disconnect', () => {
-    console.log(`[DESCONEXIÓN] Cliente desconectado: ${socket.id}`);
+    console.log(chalk.red('🔌 ') + chalk.bold.white('DESCONEXIÓN: ') + chalk.gray(socket.id));
     
     // Remover jugador de todas las salas
     salas.forEach((sala, salaId) => {
@@ -521,6 +537,8 @@ io.on('connection', (socket) => {
       if (jugadorIndex !== -1) {
         const jugador = sala.jugadores[jugadorIndex];
         sala.jugadores.splice(jugadorIndex, 1);
+        
+        console.log(chalk.yellow('👋 ') + chalk.bold.white('JUGADOR SALIÓ: ') + chalk.red(jugador.nombre) + chalk.gray(' de ') + chalk.yellow(sala.nombre));
         
         // Notificar a otros jugadores
         io.to(salaId).emit('jugadorDesconectado', {
@@ -534,7 +552,7 @@ io.on('connection', (socket) => {
             clearInterval(sala.intervalId);
           }
           salas.delete(salaId);
-          console.log(`[SALA ELIMINADA] ${sala.nombre} - Sin jugadores`);
+          console.log(chalk.red('🗑️  ') + chalk.bold.white('SALA ELIMINADA: ') + chalk.yellow(sala.nombre) + chalk.gray(' - Sin jugadores'));
         }
       }
     });

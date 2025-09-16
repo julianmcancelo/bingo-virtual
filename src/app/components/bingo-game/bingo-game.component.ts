@@ -404,12 +404,20 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     this.bingoYaCantado = false;
     this.hayBingo = false;
     
-    // Generar números disponibles por columna
+    // Generar números disponibles por columna (1-90 total)
     const numerosPorColumna: number[][] = [];
     for (let col = 0; col < 9; col++) {
       const numeros: number[] = [];
-      const min = col === 0 ? 1 : col * 10;
-      const max = col === 0 ? 9 : col === 8 ? 90 : (col * 10) + 9;
+      let min: number, max: number;
+      
+      if (col === 0) {
+        min = 1; max = 10;  // Columna 1: 1-10 (10 números)
+      } else if (col === 8) {
+        min = 81; max = 90; // Columna 9: 81-90 (10 números)
+      } else {
+        min = (col * 10) + 1; // Columnas 2-8: 11-20, 21-30, ..., 71-80
+        max = (col + 1) * 10;
+      }
       
       for (let num = min; num <= max; num++) {
         numeros.push(num);
@@ -464,9 +472,30 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     if (!this.carton[event.fila] || !this.carton[event.fila][event.columna]) return;
     
     const celda = this.carton[event.fila][event.columna];
-    if (celda && !celda.esLibre && celda.numero && this.numerosSorteados.includes(celda.numero)) {
-      celda.marcada = !celda.marcada;
-      console.log('[BINGO-GAME] Celda marcada:', celda.numero, 'Estado:', celda.marcada);
+    if (celda && !celda.esLibre && celda.numero) {
+      // Si ya está marcada, no permitir desmarcar
+      if (celda.marcada) {
+        this.snackBar.open('No puedes desmarcar un número ya marcado', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
+        });
+        return;
+      }
+      
+      // Si el número no ha salido, mostrar notificación
+      if (!this.numerosSorteados.includes(celda.numero)) {
+        this.snackBar.open(`El número ${celda.numero} aún no ha salido`, 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
+        });
+        return;
+      }
+      
+      // Solo marcar si el número ha salido y no está marcado
+      celda.marcada = true;
+      console.log('[BINGO-GAME] Celda marcada:', celda.numero);
       this.verificarCondicionesGanadoras();
     }
   }
