@@ -552,7 +552,7 @@ app.get('/stats', (req, res) => {
   res.json(stats);
 });
 
-const PORT = 3000;
+const PORT = 3002;
 
 const showMatrixAnimation = (callback) => {
   console.clear();
@@ -599,39 +599,44 @@ const showMatrixAnimation = (callback) => {
 };
 
 const startServer = () => {
-  const border = chalk.bold.hex('#8A2BE2')('═').repeat(60);
-  const emptyLine = chalk.bold.hex('#8A2BE2')('║') + ' '.repeat(58) + chalk.bold.hex('#8A2BE2')('║');
+  const width = 80;
+  const border = chalk.hex('#888')('─').repeat(width);
+  const title = (text) => chalk.bold.hex('#FFA500')(text.toUpperCase());
 
-  const line = (text) => {
-    const strippedText = text.replace(/[\u001b\u009b][[()#;?]*.{0,2}m/g, '');
-    const padding = ' '.repeat(Math.max(0, 57 - strippedText.length));
-    return chalk.bold.hex('#8A2BE2')('║ ') + text + padding + chalk.bold.hex('#8A2BE2')(' ║');
-  };
+  const logo = [
+    chalk.cyan('    ██████╗  ██╗ ███╗   ██╗  ██████╗  ██████╗'),
+    chalk.cyan('    ██╔══██╗ ██║ ████╗  ██║ ██╔════╝ ██╔═══██╗'),
+    chalk.cyan('    ██████╔╝ ██║ ██╔██╗ ██║ ██║  ███╗ ██║   ██║'),
+    chalk.cyan('    ██╔══██╗ ██║ ██║╚██╗██║ ██║   ██║ ██║   ██║'),
+    chalk.cyan('    ██████╔╝ ██║ ██║ ╚████║ ╚██████╔╝ ╚██████╔╝'),
+    chalk.cyan('    ╚═════╝  ╚═╝ ╚═╝  ╚═══╝  ╚═════╝   ╚═════╝'),
+  ].join('\n');
 
-  const logoAscii = [
-    '    ████████╗',
-    '    ██╔═════╝',
-    '    ██████╗  ',
-    '    ██╔═══╝  ',
-    '    ████████╗',
-    '    ╚═══════╝'
-  ];
+  console.log(logo);
+  console.log(border);
 
-  logoAscii.forEach(line => console.log(chalk.hex('#00BFFF')(line)));
-  console.log('');
+  // Proyecto y Equipo
+  console.log(title('  Proyecto'));
+  console.log(`    ${chalk.white('Materia:')} ${chalk.yellow('Algoritmos y Estructuras de Datos III')}`);
+  console.log(`    ${chalk.white('Profesor:')} ${chalk.yellow('Sebastián Saldivar')}`);
+  console.log(`    ${chalk.white('Autores:')} ${chalk.yellow('Julián M. Cancelo & Nicolás Otero')}`);
+  console.log(border);
 
-  console.log(chalk.bold.hex('#8A2BE2')('╔' + border + '╗'));
-  console.log(line(chalk.hex('#FFD700').bold('           BINGO VIRTUAL MULTIJUGADOR')));
-  console.log(line(chalk.hex('#00FFFF').bold('                 SERVIDOR INICIADO')));
-  console.log(chalk.bold.hex('#8A2BE2')('╠' + border + '╣'));
-  console.log(line(chalk.white('Autores: Julián Manuel Cancelo & Nicolás Otero')));
-  console.log(line(chalk.white('Materia: Algoritmos y Estructuras de Datos III')));
-  console.log(line(chalk.white('Profesor: Sebastián Saldivar')));
-  console.log(emptyLine);
-  console.log(line(`${chalk.green('● Puerto:')} ${chalk.yellow(PORT)}`));
-  console.log(line(`${chalk.green('● Socket.IO:')} ${chalk.yellow('Activo')}`));
-  console.log(line(`${chalk.green('● CORS:')} ${chalk.yellow('http://localhost:4200')}`));
-  console.log(chalk.bold.hex('#8A2BE2')('╚' + border + '╝\n'));
+  // Detalles Técnicos
+  console.log(title('  Detalles Técnicos del Servidor'));
+  console.log(`    ${chalk.hex('#00FFFF')('Estructuras de Datos:')}`);
+  console.log(`      - ${chalk.white('Map:')} Almacenamiento de salas de juego ${chalk.gray('(O(1) Búsqueda/Inserción)')}`);
+  console.log(`      - ${chalk.white('Set:')} Números sorteados sin duplicados ${chalk.gray('(O(1) Verificación)')}`);
+  console.log(`    ${chalk.hex('#00FFFF')('Algoritmos Clave:')}`);
+  console.log(`      - ${chalk.white('Sincronización de Estado en Tiempo Real con WebSockets')}`);
+  console.log(`      - ${chalk.white('Generación de Cartones de Bingo Únicos')}`);
+  console.log(border);
+
+  // Estado del Servidor
+  console.log(title('  Estado del Servidor'));
+  console.log(`    ${chalk.green('●')} ${chalk.white('Servidor escuchando en el puerto')} ${chalk.bold.yellow(PORT)}`);
+  console.log(`    ${chalk.green('●')} ${chalk.white('Socket.IO listo para recibir conexiones.')}`);
+  console.log(border);
 };
 
 server.listen(PORT, () => {

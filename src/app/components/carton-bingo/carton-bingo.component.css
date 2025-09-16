@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+.celda.marcada {
+  background-color: #28a745 !important; /* Verde éxito */
+  color: white !important; /* Forzar el color del texto a blanco */
+  transform: scale(1.05);
+  border-radius: 8px;
+  font-weight: bold;
+  box-shadow: 0 0 12px rgba(40, 167, 69, 0.7);
+}

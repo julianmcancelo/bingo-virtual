@@ -1,0 +1,9 @@
+:host ::ng-deep .mat-form-field.ng-invalid.ng-touched .mat-mdc-form-field-focus-overlay,
+:host ::ng-deep .mat-form-field.ng-invalid.ng-touched .mat-form-field-outline {
+  border-color: #ef4444 !important; /* Rojo-500 de Tailwind */
+  border-width: 1px !important;
+}
+
+:host ::ng-deep .mat-form-field.ng-invalid.ng-touched .mat-label {
+  color: #ef4444 !important; /* Rojo-500 de Tailwind */
+}
