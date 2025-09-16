@@ -34,7 +34,7 @@ export interface Jugador {
 }
 
 export interface CeldaBingo {
-  numero: number;
+  numero: number | null;
   marcada: boolean;
   esLibre?: boolean;
 }

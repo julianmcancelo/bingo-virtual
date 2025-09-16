@@ -9,6 +9,7 @@
 
 import { Component, OnInit, OnDestroy, ViewChild, ViewContainerRef, ComponentRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -37,6 +38,7 @@ import { JuegoComponent } from '../juego/juego.component';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     RouterLink,
     MatButtonModule,
     MatIconModule,
@@ -123,8 +125,14 @@ import { JuegoComponent } from '../juego/juego.component';
         </div>
       </main>
 
-      <!-- Floating Action Button with Menu -->
-      <div class="fixed bottom-6 right-6 z-50">
+      <!-- Floating Action Buttons -->
+      <div class="fixed bottom-6 right-6 z-50 flex flex-col gap-4">
+        <!-- Chat Button -->
+        <button mat-fab color="accent" (click)="toggleChat()" matTooltip="Chat" class="chat-fab">
+          <mat-icon>chat</mat-icon>
+        </button>
+        
+        <!-- Menu Button -->
         <button mat-fab color="primary" [matMenuTriggerFor]="mainMenu" matTooltip="Opciones">
           <mat-icon>menu</mat-icon>
         </button>
@@ -143,6 +151,59 @@ import { JuegoComponent } from '../juego/juego.component';
             <span>Info del Proyecto</span>
           </button>
         </mat-menu>
+      </div>
+
+      <!-- Chat Modal -->
+      <div *ngIf="chatAbierto" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="cerrarChat()">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md h-96 flex flex-col" (click)="$event.stopPropagation()">
+          <!-- Chat Header -->
+          <div class="flex items-center justify-between p-4 border-b">
+            <h3 class="text-lg font-semibold">Chat de la Sala</h3>
+            <button (click)="cerrarChat()" class="text-gray-500 hover:text-gray-700">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          
+          <!-- Chat Messages -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-3" #chatMessages>
+            <div *ngFor="let mensaje of mensajesChat" 
+                 class="flex flex-col"
+                 [ngClass]="{'items-end': mensaje.jugador === jugadorActual?.nombre, 'items-start': mensaje.jugador !== jugadorActual?.nombre}">
+              <div class="max-w-xs px-3 py-2 rounded-lg"
+                   [ngClass]="{
+                     'bg-blue-500 text-white': mensaje.jugador === jugadorActual?.nombre,
+                     'bg-gray-200 text-gray-800': mensaje.jugador !== jugadorActual?.nombre
+                   }">
+                <div class="text-xs opacity-75 mb-1">{{ mensaje.jugador }}</div>
+                <div>{{ mensaje.mensaje }}</div>
+                <div class="text-xs opacity-75 mt-1">{{ formatTime(mensaje.timestamp) }}</div>
+              </div>
+            </div>
+            <div *ngIf="mensajesChat.length === 0" class="text-center text-gray-500 py-8">
+              <mat-icon class="text-4xl mb-2">chat_bubble_outline</mat-icon>
+              <p>¡Sé el primero en enviar un mensaje!</p>
+            </div>
+          </div>
+          
+          <!-- Chat Input -->
+          <div class="border-t p-4">
+            <div class="flex gap-2">
+              <input 
+                type="text" 
+                [(ngModel)]="nuevoMensaje" 
+                (keyup.enter)="enviarMensaje()"
+                placeholder="Escribe un mensaje..."
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                maxlength="200">
+              <button 
+                (click)="enviarMensaje()" 
+                [disabled]="!nuevoMensaje?.trim()"
+                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed">
+                <mat-icon>send</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -194,6 +255,10 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   numerosSorteados: number[] = [];
   hayBingo: boolean = false;
   
+  // Chat modal
+  chatAbierto: boolean = false;
+  nuevoMensaje: string = '';
+  
   // Suscripciones
   private suscripciones: Subscription[] = [];
 
@@ -202,21 +267,50 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     this.socketService.connect();
     
     // Suscribirse a eventos específicos
-    this.socketService.salaActual$.subscribe(sala => {
-      this.salaActual = sala;
-    });
+    this.suscripciones.push(
+      this.socketService.salaActual$.subscribe(sala => {
+        this.salaActual = sala;
+      })
+    );
     
-    this.socketService.jugadorActual$.subscribe((jugador: Jugador | null) => {
-      this.jugadorActual = jugador;
-    });
+    this.suscripciones.push(
+      this.socketService.jugadorActual$.subscribe((jugador: Jugador | null) => {
+        this.jugadorActual = jugador;
+      })
+    );
     
-    this.socketService.jugadores$.subscribe(jugadores => {
-      this.jugadores = jugadores;
-    });
+    this.suscripciones.push(
+      this.socketService.jugadores$.subscribe(jugadores => {
+        this.jugadores = jugadores;
+      })
+    );
     
-    this.socketService.mensajesChat$.subscribe((mensajes: any[]) => {
-      this.mensajesChat = mensajes;
-    });
+    this.suscripciones.push(
+      this.socketService.mensajesChat$.subscribe((mensajes: any[]) => {
+        this.mensajesChat = mensajes;
+      })
+    );
+
+    // Suscribirse a eventos del juego
+    this.suscripciones.push(
+      this.socketService.numeroSorteado$.subscribe((data: any) => {
+        if (data) {
+          this.numeroActual = data.numero;
+          this.numerosSorteados = data.numerosSorteados || [];
+          console.log('[BINGO-GAME] Número actualizado:', this.numeroActual, 'Total sorteados:', this.numerosSorteados.length);
+        }
+      })
+    );
+
+    this.suscripciones.push(
+      this.socketService.juegoIniciado$.subscribe((data: any) => {
+        if (data) {
+          console.log('[BINGO-GAME] Juego iniciado, generando cartón...');
+          this.generarCarton();
+          this.vistaActual = 'juego';
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -255,17 +349,93 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     this.jugadores = [];
   }
 
+  // Generar cartón de bingo
+  generarCarton(): void {
+    this.carton = [];
+    for (let i = 0; i < 3; i++) {
+      const fila: CeldaBingo[] = [];
+      for (let j = 0; j < 9; j++) {
+        // Generar número aleatorio según la columna
+        const min = j * 10 + 1;
+        const max = (j + 1) * 10;
+        const numero = Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        // Celda libre en el centro
+        if (i === 1 && j === 4) {
+          fila.push({
+            numero: null,
+            marcada: true,
+            esLibre: true
+          });
+        } else {
+          fila.push({
+            numero: numero,
+            marcada: false,
+            esLibre: false
+          });
+        }
+      }
+      this.carton.push(fila);
+    }
+    console.log('[BINGO-GAME] Cartón generado:', this.carton);
+  }
+
   toggleCelda(event: { fila: number; columna: number }): void {
+    if (!this.carton[event.fila] || !this.carton[event.fila][event.columna]) return;
+    
     const celda = this.carton[event.fila][event.columna];
-    if (celda && celda.numero === this.numeroActual) {
+    if (celda && !celda.esLibre && celda.numero && this.numerosSorteados.includes(celda.numero)) {
       celda.marcada = !celda.marcada;
+      console.log('[BINGO-GAME] Celda marcada:', celda.numero, 'Estado:', celda.marcada);
       this.verificarBingo();
     }
   }
 
   private verificarBingo(): boolean {
-    // Lógica de verificación de bingo
+    // Verificar líneas horizontales
+    for (let i = 0; i < this.carton.length; i++) {
+      if (this.carton[i].every(celda => celda.marcada)) {
+        console.log('[BINGO-GAME] ¡BINGO! Línea horizontal:', i);
+        this.hayBingo = true;
+        return true;
+      }
+    }
+    
+    // Verificar líneas verticales
+    for (let j = 0; j < 9; j++) {
+      if (this.carton.every(fila => fila[j].marcada)) {
+        console.log('[BINGO-GAME] ¡BINGO! Línea vertical:', j);
+        this.hayBingo = true;
+        return true;
+      }
+    }
+    
     return false;
+  }
+
+  // Métodos del chat
+  toggleChat(): void {
+    this.chatAbierto = !this.chatAbierto;
+  }
+
+  cerrarChat(): void {
+    this.chatAbierto = false;
+  }
+
+  enviarMensaje(): void {
+    if (this.nuevoMensaje.trim() && this.salaActual && this.jugadorActual) {
+      this.socketService.enviarMensaje(this.salaActual.id, this.jugadorActual.nombre, this.nuevoMensaje.trim());
+      this.nuevoMensaje = '';
+    }
+  }
+
+  formatTime(timestamp: any): string {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   }
 
   // Métodos del menú
