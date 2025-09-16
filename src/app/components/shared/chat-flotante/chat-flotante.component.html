@@ -1,0 +1,71 @@
+<div class="chat-flotante" [ngClass]="posicionClasses">
+  <!-- Botón flotante del chat -->
+  <button 
+    class="chat-toggle-btn"
+    (click)="toggleChat()"
+    [class.chat-abierto]="chatAbierto"
+    matRipple>
+    <mat-icon>{{ chatAbierto ? 'close' : 'chat' }}</mat-icon>
+    <span 
+      *ngIf="mensajesNoLeidos > 0 && !chatAbierto" 
+      class="badge-contador"
+      [matBadge]="mensajesNoLeidos"
+      matBadgeColor="warn"
+      matBadgeSize="small">
+    </span>
+  </button>
+
+  <!-- Panel del chat -->
+  <div class="chat-panel" [class.chat-visible]="chatAbierto">
+    <!-- Header del chat -->
+    <div class="chat-header">
+      <div class="chat-title">
+        <mat-icon>chat</mat-icon>
+        <span>Chat de la Sala</span>
+      </div>
+      <button class="close-btn" (click="toggleChat()" mat-icon-button>
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Mensajes del chat -->
+    <div class="chat-messages" #chatMessages>
+      <div *ngFor="let mensaje of mensajes" 
+           class="mensaje"
+           [ngClass]="{'mensaje-propio': esMensajePropio(mensaje)}">
+        <div class="mensaje-header">
+          <span class="mensaje-autor">{{ mensaje.jugador }}</span>
+          <span class="mensaje-hora">{{ formatearHora(mensaje.timestamp) }}</span>
+        </div>
+        <div class="mensaje-contenido">{{ mensaje.mensaje }}</div>
+      </div>
+      
+      <!-- Estado vacío -->
+      <div *ngIf="mensajes.length === 0" class="chat-vacio">
+        <mat-icon>chat_bubble_outline</mat-icon>
+        <p>¡Sé el primero en enviar un mensaje!</p>
+      </div>
+    </div>
+
+    <!-- Input del chat -->
+    <div class="chat-input-container">
+      <div class="chat-input-wrapper">
+        <input 
+          type="text" 
+          [(ngModel)]="nuevoMensaje" 
+          (keydown)="onEnterPressed($event)"
+          placeholder="Escribe un mensaje..."
+          class="chat-input"
+          maxlength="200"
+          [disabled]="!jugadorActual">
+        <button 
+          (click)="enviarMensaje()" 
+          [disabled]="!nuevoMensaje.trim() || !jugadorActual" 
+          class="send-btn"
+          mat-icon-button>
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

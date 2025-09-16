@@ -89,6 +89,8 @@ export class SocketService {
   private bingoSubject = new Subject<EventoBingo>();
   private errorSubject = new Subject<{mensaje: string}>();
   private juegoIniciadoSubject = new Subject<{mensaje: string, jugadores: number}>();
+  private mensajeRecibidoSubject = new Subject<MensajeChat>();
+  private salaActualizadaSubject = new Subject<Sala>();
 
   /**
    * OBSERVABLES PÚBLICOS
@@ -105,6 +107,8 @@ export class SocketService {
   public bingo$ = this.bingoSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
   public juegoIniciado$ = this.juegoIniciadoSubject.asObservable();
+  public mensajeRecibido$ = this.mensajeRecibidoSubject.asObservable();
+  public salaActualizada$ = this.salaActualizadaSubject.asObservable();
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     // Solo conectar en el navegador, no durante SSR
@@ -182,6 +186,7 @@ export class SocketService {
       this.salaActualSubject.next(data.sala);
       this.jugadorActualSubject.next(data.jugador);
       this.jugadoresSubject.next(data.sala.jugadores);
+      this.salaActualizadaSubject.next(data.sala);
     });
 
     this.socket.on('unidoASala', (data: any) => {
@@ -189,6 +194,7 @@ export class SocketService {
       this.salaActualSubject.next(data.sala);
       this.jugadorActualSubject.next(data.jugador);
       this.jugadoresSubject.next(data.sala.jugadores);
+      this.salaActualizadaSubject.next(data.sala);
     });
 
     // Eventos de jugadores
@@ -224,6 +230,7 @@ export class SocketService {
     this.socket.on('nuevoMensaje', (mensaje: any) => {
       const mensajesActuales = this.mensajesChatSubject.value;
       this.mensajesChatSubject.next([...mensajesActuales, mensaje]);
+      this.mensajeRecibidoSubject.next(mensaje);
     });
 
     // Eventos de error
