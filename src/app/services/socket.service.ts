@@ -143,7 +143,20 @@ export class SocketService {
     this.socket.on('connect', () => {
       console.log('[SOCKET] Conectado al servidor:', this.socket.id);
       this.conectadoSubject.next(true);
-    this.socketIdSubject.next(this.socket.id ?? null);
+      this.socketIdSubject.next(this.socket.id ?? null);
+    });
+
+    // Evento de error de conexión
+    this.socket.on('connect_error', (error: any) => {
+      console.error('[SOCKET] Error de conexión:', error);
+      this.conectadoSubject.next(false);
+    });
+
+    // Evento de reconexión
+    this.socket.on('reconnect', () => {
+      console.log('[SOCKET] Reconectado al servidor');
+      this.conectadoSubject.next(true);
+      this.socketIdSubject.next(this.socket.id ?? null);
     });
 
     // Evento de desconexión
