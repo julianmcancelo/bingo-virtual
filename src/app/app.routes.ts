@@ -11,7 +11,7 @@
  */
 
 import { Routes } from '@angular/router';
-import { AuthGuard } from './core/guards/auth.guard';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -27,7 +27,9 @@ export const routes: Routes = [
   },
   {
     path: 'bingo',
-    loadComponent: () => import('./components/bingo-game/bingo-game.component').then(m => m.BingoGameComponent)
+    loadComponent: () => import('./components/bingo-game/bingo-game.component').then(m => m.BingoGameComponent),
+    canActivate: [authGuard],
+    title: 'Jugar - Bingo Virtual'
   },
   {
     path: 'about',
@@ -41,13 +43,13 @@ export const routes: Routes = [
   {
     path: 'estadisticas',
     loadChildren: () => import('./features/estadisticas/estadisticas.routes').then(m => m.estadisticasRoutes),
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     title: 'Estadísticas - Bingo Virtual'
   },
   {
     path: 'admin',
     loadChildren: () => import('./features/admin/admin.routes').then(m => m.adminRoutes),
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     title: 'Administración - Bingo Virtual'
   },
   {

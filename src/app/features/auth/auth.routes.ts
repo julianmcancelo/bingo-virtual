@@ -12,15 +12,17 @@ import { Routes } from '@angular/router';
 export const authRoutes: Routes = [
   {
     path: 'login',
-    loadComponent: () => import('./components/auth-login/auth-login.component')
-      .then(m => m.AuthLoginComponent),
-    title: 'Iniciar Sesión - Bingo Virtual'
+    loadComponent: () => import('./components/auth-form/auth-form.component')
+      .then(m => m.AuthFormComponent),
+    title: 'Iniciar Sesión - Bingo Virtual',
+    data: { isLogin: true }
   },
   {
     path: 'register',
-    loadComponent: () => import('./components/auth-register/auth-register.component')
-      .then(m => m.AuthRegisterComponent),
-    title: 'Registrarse - Bingo Virtual'
+    loadComponent: () => import('./components/auth-form/auth-form.component')
+      .then(m => m.AuthFormComponent),
+    title: 'Registrarse - Bingo Virtual',
+    data: { isLogin: false }
   },
   {
     path: '',

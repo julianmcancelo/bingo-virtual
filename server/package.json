@@ -29,7 +29,7 @@
   "subject": "Algoritmos y Estructuras de Datos III",
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^12.2.0",
+    "better-sqlite3": "^8.5.0",
     "chalk": "^4.1.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

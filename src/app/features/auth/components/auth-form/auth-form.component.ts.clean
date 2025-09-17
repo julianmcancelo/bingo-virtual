@@ -1,0 +1,151 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { AuthService } from '../../../../services/auth.service';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import Swal from 'sweetalert2';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-auth-form',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterModule
+  ],
+  templateUrl: './auth-form.component.html',
+  styleUrls: ['./auth-form.component.css']
+})
+export class AuthFormComponent implements OnInit, OnDestroy {
+  loginForm: FormGroup;
+  registerForm: FormGroup;
+  isLoginMode = true;
+  isLoading = false;
+  error: string | null = null;
+  currentYear = new Date().getFullYear();
+  private routeSub: Subscription = new Subscription();
+
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+
+    this.registerForm = this.fb.group({
+      nombre_usuario: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirm_password: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  ngOnInit(): void {
+    this.route.data.subscribe(data => {
+      this.isLoginMode = data['isLogin'] !== false;
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.routeSub) {
+      this.routeSub.unsubscribe();
+    }
+  }
+
+  toggleMode(): void {
+    this.isLoginMode = !this.isLoginMode;
+    if (this.isLoginMode) {
+      this.loginForm.reset();
+    } else {
+      this.registerForm.reset();
+    }
+  }
+
+  private passwordMatchValidator(g: FormGroup): { [key: string]: boolean } | null {
+    const password = g.get('password')?.value;
+    const confirmPassword = g.get('confirm_password')?.value;
+    return password === confirmPassword ? null : { mismatch: true };
+  }
+
+  onSwitchMode(): void {
+    this.toggleMode();
+    const newPath = this.isLoginMode ? '/auth/login' : '/auth/register';
+    this.router.navigateByUrl(newPath);
+  }
+
+  onSubmit(): void {
+    if (this.isLoginMode) {
+      this.onLogin();
+    } else {
+      this.onRegister();
+    }
+  }
+
+  private onLogin(): void {
+    if (this.loginForm.invalid) {
+      return;
+    }
+
+    const { email, password } = this.loginForm.value;
+    this.isLoading = true;
+
+    this.authService.login(email, password).subscribe({
+      next: () => {
+        this.router.navigate(['/bingo']);
+      },
+      error: (error: any) => {
+        console.error('Login error:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'Credenciales inválidas. Por favor, inténtalo de nuevo.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar'
+        });
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private onRegister(): void {
+    if (this.registerForm.invalid) {
+      return;
+    }
+
+    const { nombre_usuario, email, password } = this.registerForm.value;
+    this.isLoading = true;
+
+    this.authService.register(
+      nombre_usuario, 
+      email, 
+      password, 
+      this.registerForm.value.confirm_password
+    ).subscribe({
+      next: () => {
+        Swal.fire({
+          title: '¡Registro exitoso!',
+          text: 'Tu cuenta ha sido creada correctamente. Por favor inicia sesión.',
+          icon: 'success',
+          confirmButtonText: 'Aceptar'
+        });
+        this.toggleMode();
+      },
+      error: (error: any) => {
+        console.error('Registration error:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo completar el registro. Por favor, inténtalo de nuevo.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar'
+        });
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
+  }
+}
