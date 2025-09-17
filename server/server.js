@@ -50,14 +50,29 @@ app.use(cors({
 // Rutas de autenticación
 app.post('/api/v1/auth/registro', authController.registro);
 app.post('/api/v1/auth/iniciar-sesion', authController.iniciarSesion);
+// Alias de versión corta /api/v/* para compatibilidad
+app.post('/api/v/auth/registro', authController.registro);
+app.post('/api/v/auth/iniciar-sesion', authController.iniciarSesion);
 
 // Ruta protegida de ejemplo
 app.get('/api/v1/auth/perfil', authController.proteger, authController.obtenerPerfil);
 app.patch('/api/v1/auth/actualizar-perfil', authController.proteger, authController.actualizarPerfil);
 app.patch('/api/v1/auth/actualizar-contrasena', authController.proteger, authController.actualizarContrasena);
+// Alias /api/v/*
+app.get('/api/v/auth/perfil', authController.proteger, authController.obtenerPerfil);
+app.patch('/api/v/auth/actualizar-perfil', authController.proteger, authController.actualizarPerfil);
+app.patch('/api/v/auth/actualizar-contrasena', authController.proteger, authController.actualizarContrasena);
 
 // Ruta de verificación de salud
 app.get('/api/v1/salud', (req, res) => {
+  res.status(200).json({
+    estado: 'éxito',
+    mensaje: 'El servidor está funcionando correctamente',
+    timestamp: new Date().toISOString()
+  });
+});
+// Alias /api/v/salud
+app.get('/api/v/salud', (req, res) => {
   res.status(200).json({
     estado: 'éxito',
     mensaje: 'El servidor está funcionando correctamente',
