@@ -142,13 +142,13 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/iniciar-sesion`, { email, password }).pipe(
+    return this.http.post<any>(`${this.apiUrl}/auth/iniciar-sesion`, { email, contrasena: password }).pipe(
       tap((response: any) => {
         if (response && response.token) {
           const user = {
-            id: response.usuario?.id || 0,
-            nombre_usuario: response.usuario?.nombre_usuario || email.split('@')[0],
-            email: response.usuario?.email || email,
+            id: response.datos?.usuario?.id || response.usuario?.id || 0,
+            nombre_usuario: response.datos?.usuario?.nombre_usuario || response.usuario?.nombre_usuario || email.split('@')[0],
+            email: response.datos?.usuario?.email || response.usuario?.email || email,
             token: response.token
           };
           this.setUserInStorage(user);
