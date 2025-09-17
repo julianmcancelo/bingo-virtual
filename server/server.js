@@ -80,6 +80,18 @@ app.get('/api/v/salud', (req, res) => {
   });
 });
 
+// Endpoint de salud de base de datos (MySQL)
+const { getPool } = require('./config/database');
+app.get('/api/v/db/health', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const [rows] = await pool.query('SELECT 1 AS ok');
+    res.status(200).json({ estado: 'éxito', db: 'ok', result: rows[0] });
+  } catch (e) {
+    res.status(500).json({ estado: 'error', mensaje: e.message });
+  }
+});
+
 // Manejador de rutas no encontradas
 app.all('*', (req, res, next) => {
   res.status(404).json({

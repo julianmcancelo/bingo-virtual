@@ -1,49 +1,55 @@
-const db = require('../config/database');
+const { getPool } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class Usuario {
   // Crear un nuevo usuario
   static async crear({ nombre_usuario, email, contrasena }) {
+    const pool = await getPool();
+    const salt = await bcrypt.genSalt(10);
+    const contrasenaEncriptada = await bcrypt.hash(contrasena, salt);
     try {
-      // Encriptar la contraseña
-      const salt = await bcrypt.genSalt(10);
-      const contrasenaEncriptada = await bcrypt.hash(contrasena, salt);
-      
-      const result = db.prepare(
-        'INSERT INTO usuarios (nombre_usuario, email, contrasena) VALUES (?, ?, ?)'
-      ).run(nombre_usuario, email, contrasenaEncriptada);
-      
-      return this.obtenerPorId(result.lastInsertRowid);
+      const [result] = await pool.execute(
+        'INSERT INTO usuarios (nombre_usuario, email, contrasena) VALUES (?, ?, ?)',
+        [nombre_usuario, email, contrasenaEncriptada]
+      );
+      const insertId = result.insertId;
+      return await this.obtenerPorId(insertId);
     } catch (error) {
       throw new Error(`Error al crear usuario: ${error.message}`);
     }
   }
 
   // Obtener usuario por ID
-  static obtenerPorId(id) {
+  static async obtenerPorId(id) {
+    const pool = await getPool();
     try {
-      return db.prepare('SELECT id, nombre_usuario, email, creado_en FROM usuarios WHERE id = ?')
-        .get(id);
+      const [rows] = await pool.execute(
+        'SELECT id, nombre_usuario, email, creado_en, actualizado_en FROM usuarios WHERE id = ? LIMIT 1',
+        [id]
+      );
+      return rows[0] || null;
     } catch (error) {
       throw new Error(`Error al obtener usuario: ${error.message}`);
     }
   }
 
   // Obtener usuario por email
-  static obtenerPorEmail(email) {
+  static async obtenerPorEmail(email) {
+    const pool = await getPool();
     try {
-      return db.prepare('SELECT * FROM usuarios WHERE email = ?')
-        .get(email);
+      const [rows] = await pool.execute('SELECT * FROM usuarios WHERE email = ? LIMIT 1', [email]);
+      return rows[0] || null;
     } catch (error) {
       throw new Error(`Error al buscar usuario por email: ${error.message}`);
     }
   }
 
   // Obtener usuario por nombre de usuario
-  static obtenerPorNombreUsuario(nombre_usuario) {
+  static async obtenerPorNombreUsuario(nombre_usuario) {
+    const pool = await getPool();
     try {
-      return db.prepare('SELECT * FROM usuarios WHERE nombre_usuario = ?')
-        .get(nombre_usuario);
+      const [rows] = await pool.execute('SELECT * FROM usuarios WHERE nombre_usuario = ? LIMIT 1', [nombre_usuario]);
+      return rows[0] || null;
     } catch (error) {
       throw new Error(`Error al buscar usuario por nombre de usuario: ${error.message}`);
     }
@@ -52,14 +58,11 @@ class Usuario {
   // Verificar credenciales
   static async verificarCredenciales(email, contrasena) {
     try {
-      const usuario = this.obtenerPorEmail(email);
+      const usuario = await this.obtenerPorEmail(email);
       if (!usuario) return null;
-      
       const esValido = await bcrypt.compare(contrasena, usuario.contrasena);
       if (!esValido) return null;
-      
-      // No devolver la contraseña
-      const { contrasena: _, ...usuarioSinContrasena } = usuario;
+      const { contrasena: _omit, ...usuarioSinContrasena } = usuario;
       return usuarioSinContrasena;
     } catch (error) {
       throw new Error(`Error al verificar credenciales: ${error.message}`);
@@ -67,32 +70,23 @@ class Usuario {
   }
 
   // Actualizar información del usuario
-  static actualizar(id, datosActualizados) {
+  static async actualizar(id, datosActualizados) {
+    const pool = await getPool();
     try {
       const campos = [];
       const valores = [];
-      
-      // Construir la consulta dinámicamente
       for (const [clave, valor] of Object.entries(datosActualizados)) {
-        if (clave === 'contrasena') continue; // Manejar la contraseña por separado
+        if (clave === 'contrasena') continue;
         campos.push(`${clave} = ?`);
         valores.push(valor);
       }
-      
       if (campos.length === 0) {
-        return this.obtenerPorId(id);
+        return await this.obtenerPorId(id);
       }
-      
       valores.push(id);
-      
-      const query = `
-        UPDATE usuarios 
-        SET ${campos.join(', ')}
-        WHERE id = ?
-      `;
-      
-      db.prepare(query).run(...valores);
-      return this.obtenerPorId(id);
+      const query = `UPDATE usuarios SET ${campos.join(', ')} WHERE id = ?`;
+      await pool.execute(query, valores);
+      return await this.obtenerPorId(id);
     } catch (error) {
       throw new Error(`Error al actualizar usuario: ${error.message}`);
     }
@@ -100,13 +94,11 @@ class Usuario {
 
   // Actualizar contraseña
   static async actualizarContrasena(id, nuevaContrasena) {
+    const pool = await getPool();
     try {
       const salt = await bcrypt.genSalt(10);
       const contrasenaEncriptada = await bcrypt.hash(nuevaContrasena, salt);
-      
-      db.prepare('UPDATE usuarios SET contrasena = ? WHERE id = ?')
-        .run(contrasenaEncriptada, id);
-      
+      await pool.execute('UPDATE usuarios SET contrasena = ? WHERE id = ?', [contrasenaEncriptada, id]);
       return true;
     } catch (error) {
       throw new Error(`Error al actualizar contraseña: ${error.message}`);
@@ -114,10 +106,10 @@ class Usuario {
   }
 
   // Eliminar usuario
-  static eliminar(id) {
+  static async eliminar(id) {
+    const pool = await getPool();
     try {
-      // La eliminación en cascada se encargará de los registros relacionados
-      db.prepare('DELETE FROM usuarios WHERE id = ?').run(id);
+      await pool.execute('DELETE FROM usuarios WHERE id = ?', [id]);
       return true;
     } catch (error) {
       throw new Error(`Error al eliminar usuario: ${error.message}`);

@@ -1,71 +1,79 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const mysql = require('mysql2/promise');
 
-// Ruta a la base de datos (se creará automáticamente si no existe)
-const dbPath = path.join(__dirname, '..', 'data', 'bingo.db');
+// Parámetros desde variables de entorno
+const {
+  DB_HOST = 'localhost',
+  DB_PORT = '3306',
+  DB_USER = 'root',
+  DB_PASSWORD = '',
+  DB_NAME = 'bingo_virtual'
+} = process.env;
 
-// Crear directorio 'data' si no existe
-const dataDir = path.join(__dirname, '..', 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir);
+let pool;
+
+async function createPool() {
+  if (pool) return pool;
+  pool = mysql.createPool({
+    host: DB_HOST,
+    port: Number(DB_PORT),
+    user: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+  });
+  return pool;
 }
 
-// Conectar a la base de datos
-const db = new Database(dbPath, {
-  // Habilitar el modo verbose para ver las consultas SQL en consola (útil para desarrollo)
-  verbose: console.log,
-  // Habilitar el modo WAL para mejor rendimiento en escrituras concurrentes
-  fileMustExist: false
+async function initDatabase() {
+  const pool = await createPool();
+  // Crear tablas si no existen (equivalentes MySQL)
+  // usuarios
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nombre_usuario VARCHAR(255) NOT NULL UNIQUE,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      contrasena VARCHAR(255) NOT NULL,
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // partidas
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS partidas (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      codigo_sala VARCHAR(255) NOT NULL UNIQUE,
+      estado VARCHAR(50) NOT NULL DEFAULT 'esperando',
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      finalizado_en TIMESTAMP NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // jugadores_partida
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS jugadores_partida (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      usuario_id INT NOT NULL,
+      partida_id INT NOT NULL,
+      puntuacion INT DEFAULT 0,
+      gano TINYINT(1) DEFAULT 0,
+      CONSTRAINT fk_jp_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+      CONSTRAINT fk_jp_partida FOREIGN KEY (partida_id) REFERENCES partidas(id) ON DELETE CASCADE,
+      UNIQUE KEY uq_usuario_partida (usuario_id, partida_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  console.log('[DB] Tablas MySQL verificadas/inicializadas');
+}
+
+// Inicializar al cargar
+initDatabase().catch(err => {
+  console.error('[DB] Error durante la inicialización:', err);
 });
 
-// Habilitar claves foráneas
-db.pragma('foreign_keys = ON');
-
-// Crear tablas si no existen
-const initDatabase = () => {
-  // Tabla de usuarios
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre_usuario TEXT NOT NULL UNIQUE,
-      email TEXT NOT NULL UNIQUE,
-      contrasena TEXT NOT NULL,
-      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  // Tabla de partidas
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS partidas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      codigo_sala TEXT NOT NULL UNIQUE,
-      estado TEXT NOT NULL DEFAULT 'esperando',
-      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      finalizado_en TIMESTAMP
-    )
-  `).run();
-
-  // Tabla de jugadores en partidas
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS jugadores_partida (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      usuario_id INTEGER NOT NULL,
-      partida_id INTEGER NOT NULL,
-      puntuacion INTEGER DEFAULT 0,
-      gano BOOLEAN DEFAULT 0,
-      FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-      FOREIGN KEY (partida_id) REFERENCES partidas(id) ON DELETE CASCADE,
-      UNIQUE(usuario_id, partida_id)
-    )
-  `).run();
-
-  console.log('Base de datos inicializada correctamente');
+module.exports = {
+  getPool: createPool
 };
-
-// Inicializar la base de datos
-initDatabase();
-
-// Exportar la instancia de la base de datos
-module.exports = db;
