@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable, of, throwError, timer } from 'rxjs';
 import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import { JwtHelperService } from '@auth0/angular-jwt';
 
 export interface User {
