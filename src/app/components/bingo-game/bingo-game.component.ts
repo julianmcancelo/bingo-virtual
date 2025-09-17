@@ -503,18 +503,36 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   }
 
   private mostrarNotificacionBingo(titulo: string, mensaje: string, esBingo: boolean): void {
-    Swal.fire({
-      title: titulo,
-      text: mensaje,
-      icon: esBingo ? 'success' : 'info',
-      confirmButtonText: esBingo ? 'Jugar de Nuevo' : 'Continuar',
-      allowOutsideClick: !esBingo,
-      allowEscapeKey: !esBingo
-    }).then((result) => {
-      if (esBingo && result.isConfirmed) {
-        this.volverAlLobby();
-      }
-    });
+    if (esBingo) {
+      // Mostrar notificación de fin de juego y volver automáticamente a la sala
+      Swal.fire({
+        title: '¡FIN DEL JUEGO!',
+        text: 'El juego ha terminado. Volviendo a la sala en 7 segundos...',
+        icon: 'success',
+        timer: 7000,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        willClose: () => {
+          // Volver a la sala cuando se cierre la notificación
+          this.vistaActual = 'sala';
+          // Resetear el estado del juego
+          this.hayBingo = false;
+          this.numeroActual = null;
+          this.numerosSorteados = [];
+        }
+      });
+    } else {
+      // Para notificaciones que no son de fin de juego (línea, doble línea)
+      Swal.fire({
+        title: titulo,
+        text: mensaje,
+        icon: 'info',
+        confirmButtonText: 'Continuar',
+        allowOutsideClick: true,
+        allowEscapeKey: true
+      });
+    }
   }
 
   // Métodos del chat (removidos - ahora manejados por ChatFlotanteComponent)
