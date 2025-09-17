@@ -2,18 +2,26 @@ const mysql = require('mysql2/promise');
 
 // Parámetros desde variables de entorno
 const {
-  DB_HOST = 'localhost',
+  DB_HOST = '167.250.5.55',
   DB_PORT = '3306',
-  DB_USER = 'root',
-  DB_PASSWORD = '',
-  DB_NAME = 'bingo_virtual'
+  DB_USER = 'jcancelo_aled',
+  DB_PASSWORD = 'feelthesky1',
+  DB_NAME = 'jcancelo_aled',
+  DB_SSL = 'false',
+  DB_SSL_REJECT_UNAUTHORIZED = 'false'
 } = process.env;
 
 let pool;
 
 async function createPool() {
   if (pool) return pool;
-  pool = mysql.createPool({
+  // Log seguro (no imprime contraseña)
+  console.log(`[DB] Config -> host: ${DB_HOST}, port: ${DB_PORT}, db: ${DB_NAME}, user: ${DB_USER}, ssl: ${DB_SSL}`);
+
+  const sslEnabled = String(DB_SSL).toLowerCase() === 'true';
+  const sslRejectUnauthorized = String(DB_SSL_REJECT_UNAUTHORIZED).toLowerCase() === 'true';
+
+  const poolConfig = {
     host: DB_HOST,
     port: Number(DB_PORT),
     user: DB_USER,
@@ -22,7 +30,13 @@ async function createPool() {
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
-  });
+  };
+
+  if (sslEnabled) {
+    poolConfig.ssl = { rejectUnauthorized: sslRejectUnauthorized };
+  }
+
+  pool = mysql.createPool(poolConfig);
   return pool;
 }
 
