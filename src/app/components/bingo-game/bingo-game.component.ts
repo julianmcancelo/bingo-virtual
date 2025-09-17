@@ -22,13 +22,14 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { SocketService, Jugador, Sala, CeldaBingo } from '../../services/socket.service';
 import { SettingsService } from '../../services/settings.service';
 import { ChatFlotanteComponent } from '../shared/chat-flotante/chat-flotante.component';
+import { HeaderComponent } from '../header/header.component';
 import { environment } from '../../../environments/environment';
 
 // Importaciones dinámicas de componentes
@@ -55,56 +56,17 @@ import { JuegoComponent } from '../juego/juego.component';
     MatDividerModule,
     MatSlideToggleModule,
     MatDialogModule,
-    RouterLink,
     LobbyComponent,
     SalaComponent,
     JuegoComponent,
     LoginComponent,
-    ChatFlotanteComponent
+    ChatFlotanteComponent,
+    HeaderComponent
   ],
   template: `
     <div class="min-h-screen bg-[var(--background-light-gray)] flex flex-col">
-      <!-- Header -->
-      <header class="bg-[var(--itb-dark-blue)] text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-          <div class="flex items-center gap-4">
-            <a routerLink="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src="assets/img/logo.png" alt="Logo" class="h-10 w-auto">
-              <h1 class="text-xl sm:text-2xl font-bold hidden sm:block">Bingo Virtual Educativo</h1>
-            </a>
-          </div>
-          <div class="flex items-center gap-4">
-            <nav class="hidden md:flex items-center gap-4">
-              <a routerLink="/" class="px-3 py-2 text-sm font-medium hover:bg-blue-700 rounded-md transition-colors" 
-                 [class.bg-blue-800]="router.url === '/'">
-                Inicio
-              </a>
-              <a [routerLink]="['/bingo']" 
-                 class="px-3 py-2 text-sm font-medium hover:bg-blue-700 rounded-md transition-colors"
-                 [class.bg-blue-800]="router.url.startsWith('/bingo')">
-                Jugar
-              </a>
-              <a [routerLink]="['/estadisticas']" 
-                 class="px-3 py-2 text-sm font-medium hover:bg-blue-700 rounded-md transition-colors"
-                 [class.bg-blue-800]="router.url.startsWith('/estadisticas')">
-                Estadísticas
-              </a>
-            </nav>
-            
-            <div class="flex items-center gap-4 text-xs sm:text-sm">
-              <p *ngIf="socketService.conectado$ | async as isConnected" class="hidden sm:block">
-                <strong>Conexión:</strong>
-                <span [ngClass]="{'text-green-400': isConnected, 'text-red-400': !isConnected}" class="font-semibold ml-1">
-                  {{ isConnected ? 'Conectado' : 'Desconectado' }}
-                </span>
-              </p>
-              <span *ngIf="socketService.conectado$ | async as isConnected" class="sm:hidden">
-                {{ isConnected ? 'Conectado' : 'Desconectado' }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <!-- Header global reutilizado -->
+      <app-header></app-header>
 
       <!-- Main Content -->
       <main class="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8">

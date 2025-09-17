@@ -46,17 +46,17 @@
       <!-- Elegant divider -->
       <div class="divider-container">
         <div class="divider-line"></div>
-        <span class="divider-text">O inicia sesión (próximamente)</span>
+        <span class="divider-text">O inicia sesión</span>
         <div class="divider-line"></div>
       </div>
 
       <!-- Secondary buttons with hover effects -->
       <div class="secondary-buttons">
-        <button mat-stroked-button (click)="proximamente()" class="secondary-btn" disabled>
+        <button mat-stroked-button class="secondary-btn" routerLink="/auth/login">
           <mat-icon class="btn-icon">login</mat-icon>
           <span>Iniciar Sesión</span>
         </button>
-        <button mat-stroked-button (click)="proximamente()" class="secondary-btn" disabled>
+        <button mat-stroked-button class="secondary-btn" routerLink="/auth/register">
           <mat-icon class="btn-icon">person_add</mat-icon>
           <span>Registrarse</span>
         </button>

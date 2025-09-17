@@ -24,17 +24,19 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { VersionService } from '../../services/version.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    MatFormFieldModule, 
-    MatInputModule, 
-    MatButtonModule, 
-    MatIconModule
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    RouterModule
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
