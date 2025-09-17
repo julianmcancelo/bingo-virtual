@@ -20,8 +20,8 @@ import Swal from 'sweetalert2';
 export class VersionService {
   
   // Versión actual de la aplicación
-  private readonly version = '1.3.1';
-  private readonly buildDate = '2024-09-16';
+  private readonly version = '1.3.2';
+  private readonly buildDate = '2024-09-17';
   private readonly appName = 'Bingo Virtual Educativo';
 
   constructor() { }
@@ -69,13 +69,23 @@ export class VersionService {
   getChangelog() {
     return [
       {
+        version: '1.3.2',
+        date: '2024-09-17',
+        title: 'Mejoras en la Interfaz',
+        changes: [
+          'Rediseño del campo de texto en pantalla de login',
+          'Mejora en la experiencia de usuario del formulario de inicio de sesión',
+          'Ajustes en los estilos de los campos de formulario'
+        ]
+      },
+      {
         version: '1.3.1',
         date: '2024-09-16',
         title: 'Corrección de Errores',
         changes: [
-          '🔧 Corregido error en botón "Volver al Lobby" del componente sala',
-          '✅ Solucionado problema de método inexistente onVolverAlLobby()',
-          '🎯 Mejorada estabilidad de la navegación entre componentes'
+          'Corregido error en botón "Volver al Lobby" del componente sala',
+          'Solucionado problema de método inexistente onVolverAlLobby()',
+          'Mejorada estabilidad de la navegación entre componentes'
         ]
       },
       {
@@ -83,11 +93,11 @@ export class VersionService {
         date: '2024-09-16',
         title: 'Diseño Mejorado del Cartón',
         changes: [
-          '🎨 Rediseño completo del cartón de bingo con gradientes modernos',
-          '✨ Animaciones mejoradas para números marcados',
-          '📊 Contador de progreso en tiempo real',
-          '🎯 Mejor feedback visual para hover y selección',
-          '📱 Optimización responsive mantenida'
+          'Rediseño completo del cartón de bingo con gradientes modernos',
+          'Animaciones mejoradas para números marcados',
+          'Contador de progreso en tiempo real',
+          'Mejor feedback visual para hover y selección',
+          'Optimización responsive mantenida'
         ]
       },
       {
@@ -95,23 +105,21 @@ export class VersionService {
         date: '2024-09-16',
         title: 'Chat Reposicionado y Lobby',
         changes: [
-          '💬 Chat flotante reposicionado en esquina inferior izquierda',
-          '🏠 Chat global agregado al componente lobby',
-          '🔧 Corrección de errores de sintaxis HTML',
-          '📍 Posicionamiento inteligente sin superposición'
+          'Chat flotante reposicionado en esquina inferior izquierda',
+          'Chat global agregado al componente lobby',
+          'Corrección de errores de sintaxis HTML',
+          'Mejoras visuales en componentes de chat'
         ]
       },
       {
         version: '1.1.0',
         date: '2024-09-16',
-        title: 'Sistema de Chat Unificado',
+        title: 'Sistema de Chat Flotante',
         changes: [
-          '💬 ChatService centralizado para mensajes en tiempo real',
-          '🎈 ChatFlotanteComponent con diseño moderno',
-          '🔔 Notificaciones de mensajes no leídos',
-          '🎮 Chat integrado en todas las vistas del juego',
-          '🎨 Mejoras estéticas del servidor con colores y emojis',
-          '🔢 Corrección del rango de números 1-90 completo'
+          'Implementado chat flotante en tiempo real',
+          'Conexión WebSocket para mensajes instantáneos',
+          'Diseño moderno con animaciones suaves',
+          'Totalmente responsive para dispositivos móviles'
         ]
       },
       {
@@ -119,11 +127,11 @@ export class VersionService {
         date: '2024-09-16',
         title: 'Lanzamiento Inicial',
         changes: [
-          '🎯 Juego de bingo multijugador en tiempo real',
-          '🏠 Sistema de salas y lobby',
-          '🎲 Generación automática de cartones',
-          '🏆 Detección de líneas y bingo',
-          '📱 Diseño responsive y moderno'
+          'Juego de bingo multijugador completo',
+          'Conexión en tiempo real con WebSockets',
+          'Cartón de bingo oficial (3x9 con 5 números por fila)',
+          'Sistema de salas multijugador',
+          'Interfaz moderna y responsive'
         ]
       }
     ];

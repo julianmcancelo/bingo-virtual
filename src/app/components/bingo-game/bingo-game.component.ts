@@ -99,7 +99,7 @@ import { JuegoComponent } from '../juego/juego.component';
                 </span>
               </p>
               <span *ngIf="socketService.conectado$ | async as isConnected" class="sm:hidden">
-                {{ isConnected ? '✅' : '❌' }}
+                {{ isConnected ? 'Conectado' : 'Desconectado' }}
               </span>
             </div>
           </div>
@@ -124,8 +124,10 @@ import { JuegoComponent } from '../juego/juego.component';
                       [salaActual]="salaActual"
                       [jugadorActual]="jugadorActual"
                       [jugadores]="jugadores"
+                      [mensajesChat]="mensajesChat"
                       (iniciarJuegoEvent)="iniciarJuegoMultijugador()"
-                      (volverAlLobbyEvent)="volverAlLobby()">
+                      (volverAlLobbyEvent)="volverAlLobby()"
+                      (enviarMensajeEvent)="enviarMensaje($event)">
             </app-sala>
             <app-juego *ngSwitchCase="'juego'"
                        [jugadorActual]="jugadorActual"
@@ -459,15 +461,15 @@ export class BingoGameComponent implements OnInit, OnDestroy {
       // BINGO - Cartón completo (solo una vez por juego)
       this.hayBingo = true;
       this.bingoYaCantado = true;
-      this.mostrarNotificacionBingo('🎉 ¡BINGO!', 'Has completado todo el cartón. ¡Felicidades!', true);
+      this.mostrarNotificacionBingo('¡BINGO!', 'Has completado todo el cartón. ¡Felicidades!', true);
     } else if (lineasCompletas === 2 && !this.dobleLineaYaCantada) {
       // Doble línea (solo una vez por juego)
       this.dobleLineaYaCantada = true;
-      this.mostrarNotificacionBingo('🔥 ¡DOBLE LÍNEA!', 'Has completado dos líneas. ¡Sigue así!', false);
+      this.mostrarNotificacionBingo('¡DOBLE LÍNEA!', 'Has completado dos líneas. ¡Sigue así!', false);
     } else if (lineasCompletas === 1 && !this.lineaYaCantada) {
       // Línea simple (solo una vez por juego)
       this.lineaYaCantada = true;
-      this.mostrarNotificacionBingo('⭐ ¡LÍNEA!', 'Has completado una línea. ¡Continúa jugando!', false);
+      this.mostrarNotificacionBingo('¡LÍNEA!', 'Has completado una línea. ¡Continúa jugando!', false);
     }
   }
 
@@ -528,12 +530,12 @@ export class BingoGameComponent implements OnInit, OnDestroy {
       title: 'Estado del Servidor',
       html: `
         <div class="text-left">
-          <p><strong>Conexión Socket:</strong> ${conectado ? '✅ Conectado' : '❌ Desconectado'}</p>
-          <p><strong>Socket Real:</strong> ${socketConnected ? '✅ Activo' : '❌ Inactivo'}</p>
-          <p><strong>Socket Existe:</strong> ${socketExists ? '✅ Sí' : '❌ No'}</p>
+          <p><strong>Conexión Socket:</strong> ${conectado ? 'Conectado' : 'Desconectado'}</p>
+          <p><strong>Socket Real:</strong> ${socketConnected ? 'Activo' : 'Inactivo'}</p>
+          <p><strong>Socket Existe:</strong> ${socketExists ? 'Sí' : 'No'}</p>
           <p><strong>URL:</strong> <a href="${serverUrl}" target="_blank" style="color: #4f46e5;">${serverUrl}</a></p>
           <p><strong>Plataforma:</strong> Render.com</p>
-          <p><strong>Estado:</strong> ${conectado && socketConnected ? '🟢 En línea' : '🔴 Fuera de línea'}</p>
+          <p><strong>Estado:</strong> ${conectado && socketConnected ? 'En línea' : 'Fuera de línea'}</p>
           <p><strong>Socket ID:</strong> ${this.socketService.socket?.id || 'No disponible'}</p>
           <p><strong>Jugador:</strong> ${this.jugadorActual?.nombre || this.nombreJugadorInvitado || 'No identificado'}</p>
         </div>
@@ -626,13 +628,13 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     const lineasCompletas = this.contarLineasCompletas();
     
     // Determinar estado actual basado en eventos únicos
-    let estadoJuego = '🎯 En progreso';
+    let estadoJuego = 'En progreso';
     if (this.bingoYaCantado) {
-      estadoJuego = '🎉 ¡BINGO!';
+      estadoJuego = '¡BINGO!';
     } else if (this.dobleLineaYaCantada) {
-      estadoJuego = '🔥 Doble Línea';
+      estadoJuego = 'Doble Línea';
     } else if (this.lineaYaCantada) {
-      estadoJuego = '⭐ Una Línea';
+      estadoJuego = 'Una Línea';
     }
     
     Swal.fire({
@@ -647,9 +649,9 @@ export class BingoGameComponent implements OnInit, OnDestroy {
           <p><strong>Estado del juego:</strong> ${estadoJuego}</p>
           <hr style="margin: 15px 0;">
           <p><strong>Eventos cantados:</strong></p>
-          <p>• Línea: ${this.lineaYaCantada ? '✅ Cantada' : '⏳ Pendiente'}</p>
-          <p>• Doble Línea: ${this.dobleLineaYaCantada ? '✅ Cantada' : '⏳ Pendiente'}</p>
-          <p>• Bingo: ${this.bingoYaCantado ? '✅ Cantado' : '⏳ Pendiente'}</p>
+          <p>• Línea: ${this.lineaYaCantada ? 'Cantada' : 'Pendiente'}</p>
+          <p>• Doble Línea: ${this.dobleLineaYaCantada ? 'Cantada' : 'Pendiente'}</p>
+          <p>• Bingo: ${this.bingoYaCantado ? 'Cantado' : 'Pendiente'}</p>
         </div>
       `,
       icon: 'info',
@@ -719,6 +721,13 @@ export class BingoGameComponent implements OnInit, OnDestroy {
           return; // Salir después de marcar el número
         }
       }
+    }
+  }
+
+  // Método para enviar mensajes al chat
+  enviarMensaje(mensaje: string): void {
+    if (this.salaActual?.id && this.jugadorActual && mensaje.trim()) {
+      this.socketService.enviarMensaje(this.salaActual.id, this.jugadorActual.id, mensaje.trim());
     }
   }
 }

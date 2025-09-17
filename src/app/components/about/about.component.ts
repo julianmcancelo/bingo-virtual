@@ -269,28 +269,28 @@ import { MatChipsModule } from '@angular/material/chips';
         <mat-card-content>
           <div class="space-y-4 mt-4">
             <div class="objective-item">
-              <h4 class="font-semibold text-blue-600">📚 Implementación de Estructuras de Datos</h4>
+              <h4 class="font-semibold text-blue-600">Implementación de Estructuras de Datos</h4>
               <p class="text-gray-700">Arrays multidimensionales, colas, pilas, y estructuras personalizadas para el manejo del juego.</p>
             </div>
             
             <mat-divider></mat-divider>
             
             <div class="objective-item">
-              <h4 class="font-semibold text-green-600">🔍 Algoritmos de Búsqueda y Ordenamiento</h4>
+              <h4 class="font-semibold text-green-600">Algoritmos de Búsqueda y Ordenamiento</h4>
               <p class="text-gray-700">Implementación de algoritmos de búsqueda lineal, filtrado avanzado, y ordenamiento de estadísticas.</p>
             </div>
             
             <mat-divider></mat-divider>
             
             <div class="objective-item">
-              <h4 class="font-semibold text-purple-600">🏗️ Patrones de Diseño</h4>
+              <h4 class="font-semibold text-purple-600">Patrones de Diseño</h4>
               <p class="text-gray-700">Aplicación práctica de patrones como Singleton, Observer, Factory, y Strategy en un proyecto real.</p>
             </div>
             
             <mat-divider></mat-divider>
             
             <div class="objective-item">
-              <h4 class="font-semibold text-orange-600">⚡ Análisis de Complejidad</h4>
+              <h4 class="font-semibold text-orange-600">Análisis de Complejidad</h4>
               <p class="text-gray-700">Documentación detallada de complejidad temporal y espacial de cada algoritmo implementado.</p>
             </div>
           </div>
