@@ -17,15 +17,72 @@
  * - Manejo de eventos asíncronos con callbacks
  */
 
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const chalk = require('chalk');
 
+// Importar controladores
+const authController = require('./controllers/authController');
+
+// Inicializar aplicación Express
 const app = express();
+
+// Crear servidor HTTP
 const server = http.createServer(app);
+
+// Configuración de middleware
+app.use(express.json());
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+
+// Configurar CORS
+app.use(cors({
+  origin: true, // Permitir cualquier origen en desarrollo
+  credentials: true // Permitir credenciales (cookies)
+}));
+
+// Rutas de autenticación
+app.post('/api/v1/auth/registro', authController.registro);
+app.post('/api/v1/auth/iniciar-sesion', authController.iniciarSesion);
+
+// Ruta protegida de ejemplo
+app.get('/api/v1/auth/perfil', authController.proteger, authController.obtenerPerfil);
+app.patch('/api/v1/auth/actualizar-perfil', authController.proteger, authController.actualizarPerfil);
+app.patch('/api/v1/auth/actualizar-contrasena', authController.proteger, authController.actualizarContrasena);
+
+// Ruta de verificación de salud
+app.get('/api/v1/salud', (req, res) => {
+  res.status(200).json({
+    estado: 'éxito',
+    mensaje: 'El servidor está funcionando correctamente',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Manejador de rutas no encontradas
+app.all('*', (req, res, next) => {
+  res.status(404).json({
+    estado: 'error',
+    mensaje: `No se pudo encontrar ${req.originalUrl} en este servidor`
+  });
+});
+
+// Manejador de errores global
+app.use((err, req, res, next) => {
+  console.error(chalk.red('Error:'), err);
+  
+  res.status(err.statusCode || 500).json({
+    estado: 'error',
+    mensaje: err.message || 'Algo salió mal en el servidor',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
 
 // Configuración CORS para permitir conexiones desde Angular
 const allowedOrigins = ['https://bingo-aled3.vercel.app'];
