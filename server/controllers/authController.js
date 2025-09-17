@@ -8,6 +8,39 @@ const generarToken = (id) => {
   });
 };
 
+// Controlador para cerrar sesión (stateless; el cliente elimina el token)
+exports.cerrarSesion = async (req, res, next) => {
+  try {
+    // Si quisiéramos invalidar tokens, habría que mantener una blacklist.
+    // Por ahora, solo respondemos éxito y el cliente borra el token localmente.
+    res.status(200).json({
+      estado: 'éxito',
+      mensaje: 'Sesión cerrada'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Controlador para refrescar token
+exports.refrescarToken = async (req, res, next) => {
+  try {
+    // Requiere autenticación previa (middleware proteger)
+    const nuevoToken = jwt.sign(
+      { id: req.usuario.id },
+      process.env.JWT_SECRETO || 'secreto_para_desarrollo',
+      { expiresIn: '30d' }
+    );
+
+    res.status(200).json({
+      estado: 'éxito',
+      token: nuevoToken
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Controlador para registro de usuarios
 exports.registro = async (req, res, next) => {
   try {

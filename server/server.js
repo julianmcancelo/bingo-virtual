@@ -50,9 +50,13 @@ app.use(cors({
 // Rutas de autenticación
 app.post('/api/v1/auth/registro', authController.registro);
 app.post('/api/v1/auth/iniciar-sesion', authController.iniciarSesion);
+app.post('/api/v1/auth/cerrar-sesion', authController.cerrarSesion);
+app.post('/api/v1/auth/refresh-token', authController.proteger, authController.refrescarToken);
 // Alias de versión corta /api/v/* para compatibilidad
 app.post('/api/v/auth/registro', authController.registro);
 app.post('/api/v/auth/iniciar-sesion', authController.iniciarSesion);
+app.post('/api/v/auth/cerrar-sesion', authController.cerrarSesion);
+app.post('/api/v/auth/refresh-token', authController.proteger, authController.refrescarToken);
 
 // Ruta protegida de ejemplo
 app.get('/api/v1/auth/perfil', authController.proteger, authController.obtenerPerfil);
