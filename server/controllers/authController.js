@@ -82,12 +82,19 @@ exports.registro = async (req, res, next) => {
     // Generar token
     const token = generarToken(usuario.id);
 
-    // Enviar respuesta
+    // Obtener información del nivel del usuario
+    const levelService = require('../services/levelService');
+    const nivelInfo = await levelService.obtenerNivelUsuario(usuario.id);
+    
+    // Enviar respuesta con información del nivel
     res.status(201).json({
       estado: 'éxito',
       token,
-      datos: {
-        usuario
+      usuario: {
+        id: usuario.id,
+        nombre_usuario: usuario.nombre_usuario,
+        email: usuario.email,
+        nivel: nivelInfo
       }
     });
 
@@ -101,36 +108,34 @@ exports.iniciarSesion = async (req, res, next) => {
   try {
     const { email, contrasena } = req.body;
 
-    // Validar datos de entrada
-    if (!email || !contrasena) {
-      return res.status(400).json({ 
-        estado: 'error', 
-        mensaje: 'Por favor proporcione email y contraseña' 
-      });
-    }
-
-    // Verificar credenciales
-    const usuario = await Usuario.verificarCredenciales(email, contrasena);
+    // 1) Verificar si el usuario existe y la contraseña es correcta
+    const usuario = await Usuario.obtenerPorEmail(email);
     
-    if (!usuario) {
-      return res.status(401).json({ 
-        estado: 'error', 
-        mensaje: 'Credenciales inválidas' 
+    if (!usuario || !(await usuario.verificarContrasena(contrasena))) {
+      return res.status(401).json({
+        estado: 'error',
+        mensaje: 'Credenciales inválidas'
       });
     }
 
-    // Generar token
+    // 2) Generar token JWT
     const token = generarToken(usuario.id);
+    
+    // 3) Obtener información del nivel del usuario
+    const levelService = require('../services/levelService');
+    const nivelInfo = await levelService.obtenerNivelUsuario(usuario.id);
 
-    // Enviar respuesta
+    // 4) Enviar respuesta exitosa con token e información del usuario
     res.status(200).json({
       estado: 'éxito',
       token,
-      datos: {
-        usuario
+      usuario: {
+        id: usuario.id,
+        nombre_usuario: usuario.nombre_usuario,
+        email: usuario.email,
+        nivel: nivelInfo
       }
     });
-
   } catch (error) {
     next(error);
   }
@@ -191,13 +196,19 @@ exports.proteger = async (req, res, next) => {
 // Controlador para obtener el perfil del usuario actual
 exports.obtenerPerfil = async (req, res, next) => {
   try {
-    const usuario = await Usuario.obtenerPorId(req.usuario.id);
+    // El usuario ya está disponible gracias al middleware de autenticación
+    const usuario = await Usuario.obtenerPorId(req.usuario.id, true); // Incluir información de nivel
     
+    if (!usuario) {
+      return res.status(404).json({
+        estado: 'error',
+        mensaje: 'Usuario no encontrado'
+      });
+    }
+
     res.status(200).json({
       estado: 'éxito',
-      datos: {
-        usuario
-      }
+      usuario
     });
   } catch (error) {
     next(error);

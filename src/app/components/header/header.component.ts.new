@@ -1,34 +1,15 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
-
-/**
- * HeaderComponent - Componente de encabezado de la aplicación
- * 
- * Este componente muestra la barra de navegación superior con el menú de usuario,
- * notificaciones y opciones de autenticación.
- * 
- * @author Julián Cancelo <julian.cancelo@alumnos.fi.unlp.edu.ar>
- * @author Nicolás Otero <nicolas.otero@alumnos.fi.unlp.edu.ar>
- * @course Algoritmos y Estructuras de Datos III (ALED3)
- * @professor Sebastián Saldivar
- * @year 2024
- * @university Universidad Nacional de La Plata (UNLP)
- * @faculty Facultad de Informática
- */
 
 @Component({
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './header.component.html',
-  styles: [`
-    .router-link-active {
-      @apply border-indigo-500 text-gray-900;
-    }
-  `]
+  styleUrls: ['./header.component.css']
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   @ViewChild('userMenu') userMenuElement!: ElementRef;
@@ -43,54 +24,50 @@ export class HeaderComponent implements OnInit, OnDestroy {
   
   constructor(
     private authService: AuthService,
+    private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.authSubscription = this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.isAuthenticated = !!user;
       this.updateUserInitials();
+      this.cdr.detectChanges();
     });
     
-    // Agregar el event listener para el documento
+    // Cerrar menú al hacer clic fuera de él
     document.addEventListener('click', this.onDocumentClick);
   }
   
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
     document.removeEventListener('click', this.onDocumentClick);
   }
-
-  toggleUserMenu(event: Event): void {
-    event.stopPropagation();
-    this.isUserMenuOpen = !this.isUserMenuOpen;
-  }
-
-  toggleMobileMenu(): void {
-    this.isMobileMenuOpen = !this.isMobileMenuOpen;
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.isUserMenuOpen = false;
-    this.isMobileMenuOpen = false;
-    this.router.navigate(['/']);
-  }
-
+  
   private onDocumentClick = (event: MouseEvent): void => {
     if (this.userMenuElement && !this.userMenuElement.nativeElement.contains(event.target)) {
       this.isUserMenuOpen = false;
     }
   }
   
-  @HostListener('document:click', ['$event'])
-  onClickOutside(event: MouseEvent): void {
-    this.onDocumentClick(event);
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
-
+  
+  toggleUserMenu(event: Event): void {
+    event.stopPropagation();
+    this.isUserMenuOpen = !this.isUserMenuOpen;
+  }
+  
+  logout(): void {
+    this.authService.logout();
+    this.isUserMenuOpen = false;
+    this.router.navigate(['/']);
+  }
+  
   private updateUserInitials(): void {
     if (!this.currentUser) {
       this.userInitials = '??';
