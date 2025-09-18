@@ -20,10 +20,10 @@ import Swal from 'sweetalert2';
 export class VersionService {
   
   // Versión actual de la aplicación
-  private readonly version = '2.0.0b';
-  private readonly buildDate = '2024-09-17';
+  private readonly version = '2.1.0';
+  private readonly buildDate = '2024-09-18';
   private readonly appName = 'Bingo Virtual Educativo';
-  private readonly dbVersion = '1.0.0';
+  private readonly dbVersion = '1.1.0';
 
   constructor() { }
 
@@ -70,13 +70,24 @@ export class VersionService {
   getChangelog() {
     return [
       {
+        version: '2.1.0',
+        date: '2024-09-18',
+        title: 'Sistema de Niveles y Experiencia',
+        changes: [
+          'Implementación de sistema de niveles progresivos',
+          'Experiencia (XP) por acciones en el juego',
+          'Ranking de jugadores',
+          'Visualización de nivel y progreso en el perfil'
+        ]
+      },
+      {
         version: '2.0.0',
         date: '2024-09-17',
-        title: 'Integración con SQLite y Autenticación',
+        title: 'Integración con MySQL y Autenticación',
         changes: [
-          'Integración con base de datos SQLite',
-          'Sistema completo de autenticación',
-          'Gestión de perfiles de usuario'
+          'Migración a base de datos MySQL para persistencia de datos',
+          'Sistema de autenticación de usuarios con JWT',
+          'Perfiles de usuario y gestión de cuentas'
         ]
       },
       {

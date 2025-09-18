@@ -43,7 +43,8 @@ async function createPool() {
 async function initDatabase() {
   const pool = await createPool();
   // Crear tablas si no existen (equivalentes MySQL)
-  // usuarios
+  
+  // Tabla usuarios
   await pool.query(`
     CREATE TABLE IF NOT EXISTS usuarios (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -53,6 +54,44 @@ async function initDatabase() {
       creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // tokens
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tokens (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      usuario_id INT NOT NULL,
+      token VARCHAR(255) NOT NULL,
+      tipo ENUM('refresh', 'reset_password', 'verify_email') NOT NULL,
+      expira_en DATETIME NOT NULL,
+      usado BOOLEAN DEFAULT FALSE,
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+      INDEX idx_tokens_usuario_id (usuario_id),
+      INDEX idx_tokens_token (token)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
+  // Tabla niveles_usuarios
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS niveles_usuarios (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      usuario_id INT NOT NULL,
+      nivel INT NOT NULL DEFAULT 1,
+      experiencia INT NOT NULL DEFAULT 0,
+      experiencia_siguiente_nivel INT NOT NULL DEFAULT 100,
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_usuario (usuario_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
+  // Crear índice para búsquedas por usuario si no existe
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_niveles_usuarios_usuario_id 
+    ON niveles_usuarios(usuario_id);
   `);
 
   // partidas

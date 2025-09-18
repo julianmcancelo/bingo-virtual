@@ -29,12 +29,15 @@ const chalk = require('chalk');
 
 // Importar controladores
 const authController = require('./controllers/authController');
+const nivelController = require('./controllers/nivelController');
 
 // Inicializar aplicación Express
 const app = express();
 
 // Crear servidor HTTP
 const server = http.createServer(app);
+
+// La inicialización de la base de datos ahora se maneja en config/database.js
 
 // Configuración de middleware
 app.use(express.json());
@@ -66,6 +69,11 @@ app.patch('/api/v1/auth/actualizar-contrasena', authController.proteger, authCon
 app.get('/api/v/auth/perfil', authController.proteger, authController.obtenerPerfil);
 app.patch('/api/v/auth/actualizar-perfil', authController.proteger, authController.actualizarPerfil);
 app.patch('/api/v/auth/actualizar-contrasena', authController.proteger, authController.actualizarContrasena);
+
+// Rutas de niveles de usuario
+app.get('/api/v/niveles/mi-nivel', authController.proteger, nivelController.obtenerMiNivel);
+app.get('/api/v/niveles/ranking', authController.proteger, nivelController.obtenerRanking);
+app.post('/api/v/niveles/experiencia', authController.proteger, nivelController.otorgarExperiencia);
 
 // Ruta de verificación de salud
 app.get('/api/v1/salud', (req, res) => {

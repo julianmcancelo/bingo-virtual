@@ -1,5 +1,6 @@
 const { getPool } = require('../config/database');
 const bcrypt = require('bcryptjs');
+const levelService = require('../services/levelService');
 
 class Usuario {
   // Crear un nuevo usuario
@@ -7,38 +8,76 @@ class Usuario {
     const pool = await getPool();
     const salt = await bcrypt.genSalt(10);
     const contrasenaEncriptada = await bcrypt.hash(contrasena, salt);
+    let connection;
+    
     try {
-      const [result] = await pool.execute(
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
+
+      // Insertar el usuario
+      const [result] = await connection.execute(
         'INSERT INTO usuarios (nombre_usuario, email, contrasena) VALUES (?, ?, ?)',
         [nombre_usuario, email, contrasenaEncriptada]
       );
+      
       const insertId = result.insertId;
-      return await this.obtenerPorId(insertId);
+      
+      // Crear registro de nivel para el usuario
+      await connection.execute(
+        'INSERT INTO niveles_usuarios (usuario_id, nivel, experiencia, experiencia_siguiente_nivel) VALUES (?, 1, 0, 100)',
+        [insertId]
+      );
+      
+      await connection.commit();
+      
+      // Obtener y devolver el usuario con su información de nivel
+      return await this.obtenerPorId(insertId, true);
     } catch (error) {
+      if (connection) await connection.rollback();
       throw new Error(`Error al crear usuario: ${error.message}`);
+    } finally {
+      if (connection) connection.release();
     }
   }
 
-  // Obtener usuario por ID
-  static async obtenerPorId(id) {
+  // Obtener usuario por ID con información de nivel
+  static async obtenerPorId(id, incluirNivel = false) {
     const pool = await getPool();
     try {
       const [rows] = await pool.execute(
         'SELECT id, nombre_usuario, email, creado_en, actualizado_en FROM usuarios WHERE id = ? LIMIT 1',
         [id]
       );
-      return rows[0] || null;
+      
+      if (!rows[0]) return null;
+      
+      // Si se solicita incluir información de nivel
+      if (incluirNivel) {
+        const nivelInfo = await levelService.obtenerNivelUsuario(id);
+        return { ...rows[0], nivel: nivelInfo };
+      }
+      
+      return rows[0];
     } catch (error) {
       throw new Error(`Error al obtener usuario: ${error.message}`);
     }
   }
 
-  // Obtener usuario por email
-  static async obtenerPorEmail(email) {
+  // Obtener usuario por email con información de nivel
+  static async obtenerPorEmail(email, incluirNivel = false) {
     const pool = await getPool();
     try {
       const [rows] = await pool.execute('SELECT * FROM usuarios WHERE email = ? LIMIT 1', [email]);
-      return rows[0] || null;
+      
+      if (!rows[0]) return null;
+      
+      // Si se solicita incluir información de nivel
+      if (incluirNivel) {
+        const nivelInfo = await levelService.obtenerNivelUsuario(rows[0].id);
+        return { ...rows[0], nivel: nivelInfo };
+      }
+      
+      return rows[0];
     } catch (error) {
       throw new Error(`Error al buscar usuario por email: ${error.message}`);
     }
