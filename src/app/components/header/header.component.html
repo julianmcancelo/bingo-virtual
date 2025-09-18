@@ -50,9 +50,15 @@
                   <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium text-lg">
                     {{ userInitials }}
                   </div>
-                  <div class="ml-2 text-left hidden md:block">
+                  <div class="ml-2 text-left hidden md:block min-w-0">
                     <p class="text-sm font-medium text-gray-700 truncate">{{ currentUser?.nombre_usuario || 'Usuario' }}</p>
-                    <p class="text-xs text-gray-500">Nivel 5</p>
+                    <div class="flex items-center space-x-1">
+                      <span class="text-xs font-medium text-indigo-600">Nivel {{ currentLevel }}</span>
+                      <div class="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-indigo-600 h-full rounded-full" [style.width.%]="progressPercentage"></div>
+                      </div>
+                      <span class="text-xs text-gray-500 truncate">{{ currentXp }}/{{ xpToNextLevel }} XP</span>
+                    </div>
                   </div>
                 </button>
                 

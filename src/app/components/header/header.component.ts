@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener, Inje
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
+import { LevelService } from '../../services/level.service';
 import { Subscription } from 'rxjs';
 
 /**
@@ -38,6 +39,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isAuthenticated = false;
   currentUser: User | null = null;
   userInitials = '??';
+  currentLevel: number = 1;
+  currentXp: number = 0;
+  xpToNextLevel: number = 0;
+  progressPercentage: number = 0;
   
   private authSubscription: Subscription | null = null;
   
@@ -45,10 +50,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
+    private levelService: LevelService,
     private router: Router,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    this.updateLevelInfo();
   }
 
   ngOnInit() {
@@ -122,5 +129,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
     } else {
       this.userInitials = '??';
     }
+    
+    this.updateLevelInfo();
+  }
+  
+  private updateLevelInfo(): void {
+    this.currentLevel = this.levelService.getCurrentLevel();
+    this.currentXp = this.levelService.getCurrentXp();
+    this.xpToNextLevel = this.levelService.getXpToNextLevel();
+    this.progressPercentage = this.levelService.getProgressPercentage();
   }
 }
