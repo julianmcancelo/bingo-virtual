@@ -212,27 +212,23 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   // Suscripciones
   private suscripciones: Subscription[] = [];
 
+  // Guardamos la suscripción para limpiarla después
+  private userSubscription: Subscription | null = null;
+
   ngOnInit(): void {
     // Conectar al servidor Socket.IO al inicializar el componente
     this.socketService.connect();
 
-    // Comprobación inmediata: si ya hay usuario autenticado, saltar a Lobby
-    const userNow = this.authService.currentUserValue as any;
-    if (userNow) {
-      const nombre = userNow.nombre_usuario || userNow.email || 'Jugador';
-      this.nombreJugadorInvitado = nombre;
-      this.vistaActual = 'lobby';
-      console.log('[BINGO-GAME] Sesión detectada al inicio. Saltando a Lobby con', nombre);
-    }
-
-    // Si el usuario ya tiene sesión iniciada, salteamos la vista de acceso.
-    // Tomamos su nombre para pre-cargar el lobby.
-    this.authService.currentUser$.subscribe(user => {
+    // Si el usuario ya tiene sesión iniciada, lo redirigimos al lobby
+    this.userSubscription = this.authService.currentUser$.subscribe(user => {
       if (user) {
         const nombre = user.nombre_usuario || user.email || 'Jugador';
         this.nombreJugadorInvitado = nombre;
-        this.vistaActual = 'lobby';
-        console.log('[BINGO-GAME] Sesión detectada por suscripción. Saltando a Lobby con', nombre);
+        // Solo cambiamos la vista si no estamos ya en el lobby o en otra vista de juego
+        if (this.vistaActual === 'login') {
+          this.vistaActual = 'lobby';
+          console.log('[BINGO-GAME] Usuario autenticado detectado. Redirigiendo a Lobby como', nombre);
+        }
       }
     });
     
@@ -294,13 +290,23 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Limpiar todas las suscripciones para evitar memory leaks
     this.suscripciones.forEach(sub => sub.unsubscribe());
+    if (this.userSubscription) {
+      this.userSubscription.unsubscribe();
+    }
+    // Cerrar la conexión del socket
+    const socket = (this.socketService as any).socket;
+    if (socket) {
+      socket.close();
+    }
   }
 
-  // Métodos del juego
   loginComoInvitado(nombre: string): void {
     this.nombreJugadorInvitado = nombre;
-    this.vistaActual = 'lobby';
+    if (this.vistaActual !== 'lobby') {
+      this.vistaActual = 'lobby';
+    }
   }
 
   crearSala(configuracion: { nombreSala: string, nombreJugador: string }): void {
