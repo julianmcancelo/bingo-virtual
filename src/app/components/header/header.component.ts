@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
@@ -41,10 +41,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
   
   private authSubscription: Subscription | null = null;
   
+  private isBrowser: boolean;
+
   constructor(
     private authService: AuthService,
-    private router: Router
-  ) {}
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit() {
     this.authSubscription = this.authService.currentUser$.subscribe(user => {
@@ -53,15 +58,20 @@ export class HeaderComponent implements OnInit, OnDestroy {
       this.updateUserInitials();
     });
     
-    // Agregar el event listener para el documento
-    document.addEventListener('click', this.onDocumentClick);
+    // Solo agregar el event listener en el navegador
+    if (this.isBrowser) {
+      document.addEventListener('click', this.onDocumentClick);
+    }
   }
   
   ngOnDestroy() {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
-    document.removeEventListener('click', this.onDocumentClick);
+    // Solo remover el event listener si estamos en el navegador
+    if (this.isBrowser) {
+      document.removeEventListener('click', this.onDocumentClick);
+    }
   }
 
   toggleUserMenu(event: Event): void {
@@ -81,8 +91,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   private onDocumentClick = (event: MouseEvent): void => {
-    if (this.userMenuElement && !this.userMenuElement.nativeElement.contains(event.target)) {
-      this.isUserMenuOpen = false;
+    // Verificar si estamos en el navegador y si el elemento del menú está definido
+    if (this.isBrowser && this.userMenuElement?.nativeElement && event.target) {
+      if (!this.userMenuElement.nativeElement.contains(event.target as Node)) {
+        this.isUserMenuOpen = false;
+      }
     }
   }
   
