@@ -7,8 +7,8 @@
  * @descripcion Componente principal del juego de bingo
  */
 
-import { Component, OnInit, OnDestroy, ViewChild, ViewContainerRef, ComponentRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, ViewChild, ViewContainerRef, ComponentRef, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,11 +24,13 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { v4 as uuidv4 } from 'uuid';
 import Swal from 'sweetalert2';
 
 import { SocketService, Jugador, Sala, CeldaBingo } from '../../services/socket.service';
 import { SettingsService } from '../../services/settings.service';
 import { AuthService } from '../../services/auth.service';
+import { GameStatsService } from '../../services/game-stats.service';
 import { ChatFlotanteComponent } from '../shared/chat-flotante/chat-flotante.component';
 import { environment } from '../../../environments/environment';
 
@@ -167,15 +169,18 @@ import { JuegoComponent } from '../juego/juego.component';
 })
 export class BingoGameComponent implements OnInit, OnDestroy {
   // Servicios inyectados
+  gameStartTime: Date | null = null;
+  private gameStatsSubscription: Subscription = new Subscription();
+
   constructor(
-    public socketService: SocketService,
+    private socketService: SocketService,
     private settingsService: SettingsService,
-    public router: Router,
+    private authService: AuthService,
+    private gameStatsService: GameStatsService,
+    private router: Router,
     private snackBar: MatSnackBar,
-    private viewContainer: ViewContainerRef,
     private dialog: MatDialog,
-    // Servicio de autenticación para detectar sesión y saltar acceso
-    private authService: AuthService
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   // Estado del juego
@@ -212,15 +217,12 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   // Suscripciones
   private suscripciones: Subscription[] = [];
 
-  // Guardamos la suscripción para limpiarla después
-  private userSubscription: Subscription | null = null;
-
   ngOnInit(): void {
     // Conectar al servidor Socket.IO al inicializar el componente
     this.socketService.connect();
 
     // Si el usuario ya tiene sesión iniciada, lo redirigimos al lobby
-    this.userSubscription = this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.subscribe(user => {
       if (user) {
         const nombre = user.nombre_usuario || user.email || 'Jugador';
         this.nombreJugadorInvitado = nombre;
@@ -292,8 +294,8 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Limpiar todas las suscripciones para evitar memory leaks
     this.suscripciones.forEach(sub => sub.unsubscribe());
-    if (this.userSubscription) {
-      this.userSubscription.unsubscribe();
+    if (this.gameStatsSubscription) {
+      this.gameStatsSubscription.unsubscribe();
     }
     // Cerrar la conexión del socket
     const socket = (this.socketService as any).socket;
@@ -320,9 +322,15 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   }
 
   iniciarJuegoMultijugador(): void {
-    if (this.salaActual) {
-      this.socketService.iniciarJuego(this.salaActual.id);
-      this.vistaActual = 'juego';
+    if (!this.salaActual) return;
+    
+    this.socketService.iniciarJuego(this.salaActual.id);
+    this.vistaActual = 'juego';
+    this.gameStartTime = new Date();
+    
+    // Registrar el inicio del juego en las estadísticas
+    if (isPlatformBrowser(this.platformId)) {
+      this.registrarInicioJuego();
     }
   }
 
@@ -502,12 +510,18 @@ export class BingoGameComponent implements OnInit, OnDestroy {
         allowOutsideClick: false,
         allowEscapeKey: false,
         willClose: () => {
+          // Registrar el final del juego en las estadísticas
+          if (isPlatformBrowser(this.platformId) && this.gameStartTime && this.jugadorActual) {
+            this.registrarFinJuego(this.jugadorActual);
+          }
+          
           // Volver a la sala cuando se cierre la notificación
           this.vistaActual = 'sala';
           // Resetear el estado del juego
           this.hayBingo = false;
           this.numeroActual = null;
           this.numerosSorteados = [];
+          this.gameStartTime = null;
         }
       });
     } else {
@@ -521,6 +535,128 @@ export class BingoGameComponent implements OnInit, OnDestroy {
         allowEscapeKey: true
       });
     }
+  }
+
+  /**
+   * Registra el inicio de una partida en las estadísticas
+   */
+  private registrarInicioJuego(): void {
+    if (!this.salaActual || !this.jugadorActual) return;
+    
+    const gameId = `game_${Date.now()}`;
+    
+    // Registrar el inicio del juego en el log
+    this.gameStatsService.logEvent(
+      gameId,
+      'info',
+      'Inicio de partida',
+      { salaId: this.salaActual.id, modo: 'multijugador' }
+    ).subscribe();
+  }
+  
+  /**
+   * Registra el final de una partida en las estadísticas
+   * @param ganador Información del jugador ganador
+   */
+  private registrarFinJuego(ganador: any): void {
+    if (!this.salaActual || !this.jugadorActual || !this.gameStartTime) return;
+    
+    const gameId = `game_${this.gameStartTime.getTime()}`;
+    const endTime = new Date();
+    const duration = Math.floor((endTime.getTime() - this.gameStartTime.getTime()) / 1000);
+    
+    // Crear estadísticas para cada jugador
+    const playerStats = this.jugadores.map(jugador => {
+      // Obtener los números marcados del jugador
+      const markedNumbers: number[] = [];
+      if (jugador.carton) {
+        jugador.carton.forEach(fila => {
+          fila.forEach(celda => {
+            if (celda.marcada && celda.numero !== null) {
+              markedNumbers.push(celda.numero);
+            }
+          });
+        });
+      }
+      
+      return {
+        userId: jugador.id,
+        username: jugador.nombre,
+        cards: ['card_0'], // Usamos un solo cartón por jugador por ahora
+        markedNumbers: markedNumbers,
+        bingoPatterns: {
+          line: this.lineaYaCantada || false,
+          doubleLine: this.dobleLineaYaCantada || false,
+          bingo: this.bingoYaCantado || false,
+          fourCorners: false
+        },
+        position: jugador.id === ganador?.id ? 1 : undefined,
+        xpEarned: 0, // Se calculará en el servicio
+        isWinner: jugador.id === ganador?.id,
+        lastActive: new Date()
+      };
+    });
+    
+    // Crear el objeto de estadísticas del juego
+    const gameStats: any = {
+      id: gameId,
+      startTime: this.gameStartTime,
+      endTime,
+      duration,
+      totalPlayers: this.jugadores.length,
+      winners: ganador ? [ganador.id] : [],
+      gameType: 'classic',
+      gameMode: 'multiplayer',
+      settings: {
+        maxPlayers: 10, // O el máximo configurado
+        victoryConditions: {
+          line: true,
+          doubleLine: true,
+          bingo: true,
+          fourCorners: false
+        }
+      },
+      players: playerStats,
+      numbersDrawn: this.numerosSorteados,
+      logs: [],
+      roomId: this.salaActual.id,
+      tournamentId: undefined,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // Registrar la partida en las estadísticas
+    this.gameStatsSubscription.add(
+      this.gameStatsService.recordGame(gameStats).subscribe({
+        next: (gameStats) => {
+          console.log('Estadísticas de juego guardadas:', gameStats);
+          
+          // Mostrar notificación al jugador
+          if (this.jugadorActual?.id === ganador?.id) {
+            this.snackBar.open(
+              `¡Felicidades! Has ganado ${gameStats.players.find((p: any) => p.userId === this.jugadorActual?.id)?.xpEarned} XP`,
+              'Cerrar',
+              { duration: 5000 }
+            );
+          }
+        },
+        error: (error) => {
+          console.error('Error al guardar las estadísticas del juego:', error);
+        }
+      })
+    );
+    
+    // Registrar el final del juego en el log
+    this.gameStatsService.logEvent(
+      gameId,
+      'info',
+      'Fin de partida',
+      { 
+        ganador: ganador?.nombre || 'Ninguno',
+        duracion: duration,
+        jugadores: this.jugadores.length
+      }
+    ).subscribe();
   }
 
   // Métodos del chat (removidos - ahora manejados por ChatFlotanteComponent)

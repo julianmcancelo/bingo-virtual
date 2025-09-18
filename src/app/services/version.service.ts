@@ -20,7 +20,7 @@ import Swal from 'sweetalert2';
 export class VersionService {
   
   // Versión actual de la aplicación
-  private readonly version = '2.1.0';
+  private readonly version = '2.1.1';
   private readonly buildDate = '2024-09-18';
   private readonly appName = 'Bingo Virtual Educativo';
   private readonly dbVersion = '1.1.0';

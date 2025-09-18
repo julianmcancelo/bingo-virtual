@@ -7,6 +7,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { LevelService } from './services/level.service';
+import { GameStatsService } from './services/game-stats.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,6 +23,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideAnimationsAsync(),
     LevelService,
+    GameStatsService,
     { provide: 'isBrowser', useFactory: (id: Object) => isPlatformBrowser(id), deps: [PLATFORM_ID] }
   ]
 };
