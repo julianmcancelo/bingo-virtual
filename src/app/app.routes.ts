@@ -28,17 +28,11 @@ export const routes: Routes = [
   {
     path: 'bingo',
     loadComponent: () => import('./components/bingo-game/bingo-game.component').then(m => m.BingoGameComponent),
-    canActivate: [authGuard],
     title: 'Jugar - Bingo Virtual'
   },
   {
     path: 'about',
     loadComponent: () => import('./components/about/about.component').then(m => m.AboutComponent)
-  },
-  {
-    path: 'auth',
-    loadChildren: () => import('./features/auth/auth.routes').then(m => m.authRoutes),
-    title: 'Autenticación - Bingo Virtual'
   },
   {
     path: 'estadisticas',

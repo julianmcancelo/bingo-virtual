@@ -1,3 +1,21 @@
+/* Mejora de legibilidad de inputs y placeholders en la tarjeta de bienvenida */
+:host ::ng-deep .mat-mdc-input-element {
+  /* Color del texto dentro del textbox */
+  color: #111827 !important; /* gray-900 */
+}
+
+:host ::ng-deep .mat-mdc-input-element::placeholder {
+  /* Color del placeholder (texto guía) */
+  color: #6b7280 !important; /* gray-500 */
+  opacity: 1 !important;      /* Asegura que sea visible en todos los navegadores */
+}
+
+/* Para navegadores WebKit y Firefox, aseguramos visibilidad del placeholder */
+:host ::ng-deep input::placeholder { color: #6b7280 !important; opacity: 1 !important; }
+:host ::ng-deep textarea::placeholder { color: #6b7280 !important; opacity: 1 !important; }
+
+/* Evita que estilos globales opaquen el texto del input */
+:host ::ng-deep .mdc-text-field__input { color: #111827 !important; }
 /* ===== CONTAINER & LAYOUT ===== */
 .login-container {
   position: relative;

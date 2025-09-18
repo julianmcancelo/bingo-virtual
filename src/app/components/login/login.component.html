@@ -4,64 +4,150 @@
   <div class="bg-decoration-2"></div>
   
   <div class="login-card">
-    <!-- Header with animated icon -->
+    <!-- Encabezado común -->
     <div class="login-header">
       <div class="welcome-icon">
         <img src="assets/img/logo.png" alt="Bingo Logo" class="logo-image">
       </div>
-      <h2 class="welcome-title">¡Te damos la bienvenida!</h2>
-      <p class="welcome-subtitle">Ingresa como invitado para unirte a una partida de bingo educativo</p>
+      <!-- Título dinámico según modo -->
+      <h2 class="welcome-title" *ngIf="mode==='guest'">¡Te damos la bienvenida!</h2>
+      <h2 class="welcome-title" *ngIf="mode==='signin'">Iniciar Sesión</h2>
+      <h2 class="welcome-title" *ngIf="mode==='register'">Crear Cuenta</h2>
+      <p class="welcome-subtitle" *ngIf="mode==='guest'">Ingresa como invitado para unirte a una partida de bingo educativo</p>
+      <p class="welcome-subtitle" *ngIf="mode==='signin'">Ingresa a tu cuenta</p>
+      <p class="welcome-subtitle" *ngIf="mode==='register'">Completa tus datos para registrarte</p>
     </div>
-
-    <form [formGroup]="loginForm" (ngSubmit)="iniciarComoInvitado()" class="login-form">
-      <!-- Animated input field -->
+    <!-- MODO: Invitado (guest). Si ya hay sesión, ocultamos este formulario -->
+    <form *ngIf="mode==='guest' && !isAuthenticated" [formGroup]="loginForm" (ngSubmit)="iniciarComoInvitado()" class="login-form">
+      <!-- Campo de nombre de invitado -->
       <div class="input-container">
         <mat-form-field appearance="outline" class="custom-input">
           <mat-label>Nombre de Invitado</mat-label>
-          <input 
-            matInput 
-            formControlName="nombreJugador"
-            type="text" 
-            placeholder="Ej: SuperJugador123" 
-            (keyup.enter)="iniciarComoInvitado()"
-            [class.mat-form-field-invalid]="hasFieldError('nombreJugador')">
+          <input matInput formControlName="nombreJugador" type="text" placeholder="Ej: SuperJugador123" (keyup.enter)="iniciarComoInvitado()" [class.mat-form-field-invalid]="hasFieldError('nombreJugador')">
           <mat-icon matSuffix class="input-icon">person</mat-icon>
-          <mat-error *ngIf="hasFieldError('nombreJugador')">
-            {{ getFieldError('nombreJugador') }}
-          </mat-error>
+          <mat-error *ngIf="hasFieldError('nombreJugador')">{{ getFieldError('nombreJugador') }}</mat-error>
         </mat-form-field>
       </div>
 
-      <!-- Animated primary button -->
-      <button 
-        mat-raised-button 
-        type="submit"
-        [disabled]="!loginForm.valid" 
-        class="primary-btn">
+      <!-- Botón principal invitado -->
+      <button mat-raised-button type="submit" [disabled]="!loginForm.valid" class="primary-btn">
         <mat-icon class="btn-icon">play_arrow</mat-icon>
         <span>Iniciar como Invitado</span>
         <div class="btn-ripple"></div>
       </button>
 
-      <!-- Elegant divider -->
+      <!-- Separador y acciones secundarias -->
       <div class="divider-container">
         <div class="divider-line"></div>
         <span class="divider-text">O inicia sesión</span>
         <div class="divider-line"></div>
       </div>
 
-      <!-- Secondary buttons with hover effects -->
       <div class="secondary-buttons">
-        <button mat-stroked-button class="secondary-btn" routerLink="/auth/login">
+        <button mat-stroked-button class="secondary-btn" type="button" (click)="openLogin()">
           <mat-icon class="btn-icon">login</mat-icon>
           <span>Iniciar Sesión</span>
         </button>
-        <button mat-stroked-button class="secondary-btn" routerLink="/auth/register">
+        <button mat-stroked-button class="secondary-btn" type="button" (click)="openRegister()">
           <mat-icon class="btn-icon">person_add</mat-icon>
           <span>Registrarse</span>
         </button>
       </div>
     </form>
+
+    <!-- Bienvenida cuando ya hay sesión iniciada -->
+    <div *ngIf="isAuthenticated" class="inline-auth-panel">
+      <h3 class="panel-title">¡Bienvenido, {{ currentUserName || currentUserEmail }}!</h3>
+      <div class="player-stats-card">
+        <div class="stats-row">
+          <div class="stat">
+            <span class="stat-label">Victorias</span>
+            <span class="stat-value">{{ victorias }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Derrotas</span>
+            <span class="stat-value">{{ derrotas }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Líneas</span>
+            <span class="stat-value">{{ lineasCompletas }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button mat-raised-button color="primary" type="button" (click)="irAlLobby()">Ir al Lobby</button>
+      </div>
+    </div>
+
+    <!-- MODO: Iniciar Sesión (signin) -->
+    <div *ngIf="mode==='signin'" class="inline-auth-panel">
+      <h3 class="panel-title">Iniciar Sesión</h3>
+      <form [formGroup]="loginUserForm" (ngSubmit)="submitLoginUser()">
+        <mat-form-field appearance="outline" class="custom-input">
+          <mat-label>Correo electrónico</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="correo@ejemplo.com">
+          <mat-error *ngIf="loginUserForm.get('email')?.touched && loginUserForm.get('email')?.invalid">
+            Ingresa un correo válido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="custom-input">
+          <mat-label>Contraseña</mat-label>
+          <input matInput formControlName="contrasena" type="password" placeholder="••••••">
+          <mat-error *ngIf="loginUserForm.get('contrasena')?.touched && loginUserForm.get('contrasena')?.invalid">
+            La contraseña es obligatoria (mínimo 6 caracteres)
+          </mat-error>
+        </mat-form-field>
+
+        <div class="panel-actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="loginUserForm.invalid">Entrar</button>
+          <button mat-stroked-button type="button" (click)="closeAuthPanels()">Volver</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- MODO: Registro (register) -->
+    <div *ngIf="mode==='register'" class="inline-auth-panel">
+      <h3 class="panel-title">Crear cuenta</h3>
+      <form [formGroup]="registerForm" (ngSubmit)="submitRegister()">
+        <mat-form-field appearance="outline" class="custom-input">
+          <mat-label>Nombre de usuario</mat-label>
+          <input matInput formControlName="nombre_usuario" type="text" placeholder="tu_usuario">
+          <mat-error *ngIf="registerForm.get('nombre_usuario')?.touched && registerForm.get('nombre_usuario')?.invalid">
+            3 a 30 caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="custom-input">
+          <mat-label>Correo electrónico</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="correo@ejemplo.com">
+          <mat-error *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid">
+            Ingresa un correo válido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="custom-input">
+          <mat-label>Contraseña</mat-label>
+          <input matInput formControlName="contrasena" type="password" placeholder="••••••">
+          <mat-error *ngIf="registerForm.get('contrasena')?.touched && registerForm.get('contrasena')?.invalid">
+            Mínimo 6 caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="custom-input">
+          <mat-label>Confirmar contraseña</mat-label>
+          <input matInput formControlName="confirmar_contrasena" type="password" placeholder="••••••">
+          <mat-error *ngIf="registerForm.get('confirmar_contrasena')?.touched && registerForm.get('confirmar_contrasena')?.invalid">
+            Mínimo 6 caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <div class="panel-actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="registerForm.invalid">Crear cuenta</button>
+          <button mat-stroked-button type="button" (click)="closeAuthPanels()">Volver</button>
+        </div>
+      </form>
+    </div>
     
     <!-- Version display -->
     <div class="version-display" (click)="showChangelog()">

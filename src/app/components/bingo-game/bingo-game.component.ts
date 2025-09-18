@@ -28,8 +28,8 @@ import Swal from 'sweetalert2';
 
 import { SocketService, Jugador, Sala, CeldaBingo } from '../../services/socket.service';
 import { SettingsService } from '../../services/settings.service';
+import { AuthService } from '../../services/auth.service';
 import { ChatFlotanteComponent } from '../shared/chat-flotante/chat-flotante.component';
-import { HeaderComponent } from '../header/header.component';
 import { environment } from '../../../environments/environment';
 
 // Importaciones dinámicas de componentes
@@ -60,13 +60,11 @@ import { JuegoComponent } from '../juego/juego.component';
     SalaComponent,
     JuegoComponent,
     LoginComponent,
-    ChatFlotanteComponent,
-    HeaderComponent
+    ChatFlotanteComponent
   ],
   template: `
     <div class="min-h-screen bg-[var(--background-light-gray)] flex flex-col">
-      <!-- Header global reutilizado -->
-      <app-header></app-header>
+      
 
       <!-- Main Content -->
       <main class="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -102,8 +100,8 @@ import { JuegoComponent } from '../juego/juego.component';
         </div>
       </main>
 
-      <!-- Floating Action Buttons -->
-      <div class="fixed bottom-6 left-6 z-40 flex flex-col gap-4">
+      <!-- Floating Action Buttons (ocultos en la vista de acceso) -->
+      <div *ngIf="vistaActual !== 'login'" class="fixed bottom-6 left-6 z-40 flex flex-col gap-4">
         
         <!-- Menu Button -->
         <button mat-fab color="primary" [matMenuTriggerFor]="mainMenu" matTooltip="Opciones">
@@ -175,7 +173,9 @@ export class BingoGameComponent implements OnInit, OnDestroy {
     public router: Router,
     private snackBar: MatSnackBar,
     private viewContainer: ViewContainerRef,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    // Servicio de autenticación para detectar sesión y saltar acceso
+    private authService: AuthService
   ) {}
 
   // Estado del juego
@@ -215,6 +215,26 @@ export class BingoGameComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Conectar al servidor Socket.IO al inicializar el componente
     this.socketService.connect();
+
+    // Comprobación inmediata: si ya hay usuario autenticado, saltar a Lobby
+    const userNow = this.authService.currentUserValue as any;
+    if (userNow) {
+      const nombre = userNow.nombre_usuario || userNow.email || 'Jugador';
+      this.nombreJugadorInvitado = nombre;
+      this.vistaActual = 'lobby';
+      console.log('[BINGO-GAME] Sesión detectada al inicio. Saltando a Lobby con', nombre);
+    }
+
+    // Si el usuario ya tiene sesión iniciada, salteamos la vista de acceso.
+    // Tomamos su nombre para pre-cargar el lobby.
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        const nombre = user.nombre_usuario || user.email || 'Jugador';
+        this.nombreJugadorInvitado = nombre;
+        this.vistaActual = 'lobby';
+        console.log('[BINGO-GAME] Sesión detectada por suscripción. Saltando a Lobby con', nombre);
+      }
+    });
     
     // Suscribirse a eventos específicos
     this.suscripciones.push(

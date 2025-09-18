@@ -25,6 +25,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { VersionService } from '../../services/version.service';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -51,10 +53,28 @@ export class LoginComponent implements OnInit {
    * @description Uso de FormBuilder para crear formulario con validaciones
    */
   loginForm!: FormGroup;
+  loginUserForm!: FormGroup;
+  registerForm!: FormGroup;
+
+  // Modo de la tarjeta: 'guest' (invitado), 'signin' (iniciar sesión), 'register' (crear cuenta)
+  mode: 'guest' | 'signin' | 'register' = 'guest';
+  // Estado de autenticación (para mostrar bienvenida si ya hay sesión)
+  isAuthenticated = false;
+  currentUserEmail = '';
+  currentUserName = '';
+  currentUserId: number | null = null;
+
+  // Métricas locales del jugador (futuro: persistir en servidor)
+  victorias = 0;
+  derrotas = 0;
+  lineasCompletas = 0;
 
   constructor(
     private fb: FormBuilder,
-    public versionService: VersionService
+    public versionService: VersionService,
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   /**
@@ -64,6 +84,45 @@ export class LoginComponent implements OnInit {
    */
   ngOnInit(): void {
     this.initializeForm();
+    // Suscribirse al estado de autenticación para adaptar la UI
+    this.authService.currentUser$.subscribe(user => {
+      this.isAuthenticated = !!user;
+      this.currentUserEmail = user?.email || '';
+      this.currentUserName = user?.nombre_usuario || '';
+      this.currentUserId = (user as any)?.id ?? null;
+      // Si hay sesión, cargar métricas locales
+      if (this.isAuthenticated) {
+        this.cargarMetricasUsuario();
+      }
+      // Si ya está autenticado, quedamos en modo invitado pero mostrando bienvenida (UI superior)
+    });
+
+    // Leer el query param 'mode' para abrir el panel correspondiente directamente
+    // Admite valores: 'signin' | 'register' | 'guest'
+    this.route.queryParamMap.subscribe(params => {
+      const qpMode = (params.get('mode') || 'guest') as 'guest' | 'signin' | 'register';
+      if (!this.isAuthenticated) {
+        this.mode = qpMode;
+      }
+    });
+  }
+
+  /**
+   * Carga métricas del usuario desde localStorage si existen.
+   * Clave: stats_<userId> -> { victorias, derrotas, lineasCompletas }
+   */
+  private cargarMetricasUsuario(): void {
+    try {
+      if (!this.currentUserId) return;
+      const raw = localStorage.getItem(`stats_${this.currentUserId}`);
+      if (!raw) return;
+      const stats = JSON.parse(raw);
+      this.victorias = Number(stats?.victorias || 0);
+      this.derrotas = Number(stats?.derrotas || 0);
+      this.lineasCompletas = Number(stats?.lineasCompletas || 0);
+    } catch {
+      // Ignorar errores de parseo
+    }
   }
 
   /**
@@ -80,6 +139,24 @@ export class LoginComponent implements OnInit {
         Validators.pattern(/^[a-zA-Z0-9_-]+$/) // Solo letras, números, guiones y guiones bajos
       ]]
     });
+
+    // Inline login form
+    this.loginUserForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      contrasena: ['', [Validators.required, Validators.minLength(6)]]
+    });
+
+    // Inline register form
+    this.registerForm = this.fb.group({
+      nombre_usuario: ['', [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(30)
+      ]],
+      email: ['', [Validators.required, Validators.email]],
+      contrasena: ['', [Validators.required, Validators.minLength(6)]],
+      confirmar_contrasena: ['', [Validators.required, Validators.minLength(6)]]
+    });
   }
 
   /**
@@ -95,6 +172,73 @@ export class LoginComponent implements OnInit {
       this.markFormGroupTouched();
       this.showValidationErrors();
     }
+  }
+
+  // Cambiar modo a "Iniciar sesión"
+  openLogin(): void {
+    if (this.isAuthenticated) return; // Ya autenticado, no corresponde
+    this.mode = 'signin';
+  }
+
+  openRegister(): void {
+    if (this.isAuthenticated) return; // Ya autenticado, no corresponde
+    this.mode = 'register';
+  }
+
+  closeAuthPanels(): void {
+    // Volver al modo invitado (tarjeta original)
+    this.mode = 'guest';
+  }
+
+  // Submit inline login
+  submitLoginUser(): void {
+    if (this.loginUserForm.invalid) {
+      this.loginUserForm.markAllAsTouched();
+      return;
+    }
+    const { email, contrasena } = this.loginUserForm.value;
+    this.authService.login(email, contrasena).subscribe({
+      next: () => {
+        // AuthService ya navega a /bingo; restablecemos el modo por consistencia
+        this.mode = 'guest';
+      },
+      error: (err) => {
+        const msg = err?.error?.mensaje || 'Error al iniciar sesión';
+        Swal.fire('Error', msg, 'error');
+      }
+    });
+  }
+
+  // Submit inline register
+  submitRegister(): void {
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
+    const { nombre_usuario, email, contrasena, confirmar_contrasena } = this.registerForm.value;
+    if (contrasena !== confirmar_contrasena) {
+      Swal.fire('Datos inválidos', 'Las contraseñas no coinciden', 'warning');
+      return;
+    }
+    this.authService.register(nombre_usuario, email, contrasena, confirmar_contrasena).subscribe({
+      next: () => {
+        // Usuario queda logueado por AuthService.register; navegamos a /bingo
+        this.router.navigateByUrl('/bingo');
+        this.mode = 'guest';
+      },
+      error: (err) => {
+        const msg = err?.error?.mensaje || 'Error al registrarse';
+        Swal.fire('Error', msg, 'error');
+      }
+    });
+  }
+
+  /**
+   * Ir al Lobby cuando ya hay sesión iniciada
+   * Útil para mostrar un CTA cuando el usuario vuelve a esta pantalla autenticado.
+   */
+  irAlLobby(): void {
+    this.router.navigateByUrl('/bingo');
   }
 
   /**

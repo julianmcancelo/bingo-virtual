@@ -9,17 +9,27 @@
       <div class="welcome-icon">
         <img src="assets/img/logo.png" alt="Bingo Logo" class="logo-image">
       </div>
-      <h2 class="lobby-title">¡Únete a la Diversión!</h2>
-      <p class="lobby-subtitle">Crea una nueva sala o únete a una partida existente</p>
+      <!-- Título dinámico según sesión -->
+      <h2 class="lobby-title" *ngIf="!isAuthenticated; else saludoAutenticado">¡Únete a la Diversión!</h2>
+      <ng-template #saludoAutenticado>
+        <h2 class="lobby-title">¡Bienvenido, {{ currentUserName }}!</h2>
+      </ng-template>
+      <p class="lobby-subtitle">
+        <!-- Subtítulo amigable según estado -->
+        {{ isAuthenticated ? 'Estás autenticado. Crea una sala o únete a una partida.' : 'Crea una nueva sala o únete a una partida existente' }}
+      </p>
     </div>
 
     <!-- Player name input -->
     <div class="input-container">
       <mat-form-field appearance="outline" class="custom-input">
         <mat-label>Tu Nombre de Jugador</mat-label>
-        <input matInput [(ngModel)]="nombreJugador" name="nombreJugador" required>
+        <!-- Si hay sesión, el nombre se completa y se bloquea para mantener consistencia -->
+        <input matInput [(ngModel)]="nombreJugador" name="nombreJugador" required [disabled]="isAuthenticated" placeholder="Ej: ProfeSebas ó SuperJugador">
         <mat-icon matSuffix class="input-icon">badge</mat-icon>
       </mat-form-field>
+      <!-- Mensaje de ayuda -->
+      <small *ngIf="isAuthenticated" class="text-gray-500">Usaremos tu nombre de usuario para la sala.</small>
     </div>
 
     <!-- Tabs with modern styling -->
@@ -33,7 +43,7 @@
           <div class="input-container">
             <mat-form-field appearance="outline" class="custom-input">
               <mat-label>Nombre de la Sala</mat-label>
-              <input matInput [(ngModel)]="nombreSala" name="nombreSala" required>
+              <input matInput [(ngModel)]="nombreSala" name="nombreSala" required placeholder="Ej: ALED3-Comisión-1">
               <mat-icon matSuffix class="input-icon">groups</mat-icon>
             </mat-form-field>
           </div>
@@ -53,7 +63,7 @@
           <div class="input-container">
             <mat-form-field appearance="outline" class="custom-input">
               <mat-label>ID de la Sala</mat-label>
-              <input matInput [(ngModel)]="salaIdUnirse" name="salaIdUnirse" required>
+              <input matInput [(ngModel)]="salaIdUnirse" name="salaIdUnirse" required placeholder="Ej: 8F2C-9A">
               <mat-icon matSuffix class="input-icon">vpn_key</mat-icon>
             </mat-form-field>
           </div>

@@ -46,10 +46,12 @@ import { Subscription } from 'rxjs';
             </ng-container>
             <ng-template #notAuthenticated>
               <div class="flex space-x-4">
-                <a [routerLink]="['/auth/login']" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">
+                <!-- Navegar a /bingo con query param para abrir el panel de login inline -->
+                <a [routerLink]="['/bingo']" [queryParams]="{ mode: 'signin' }" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">
                   Iniciar sesión
                 </a>
-                <a [routerLink]="['/auth/register']" class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
+                <!-- Navegar a /bingo con query param para abrir el panel de registro inline -->
+                <a [routerLink]="['/bingo']" [queryParams]="{ mode: 'register' }" class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
                   Registrarse
                 </a>
               </div>
@@ -92,10 +94,12 @@ import { Subscription } from 'rxjs';
         <ng-template #mobileNotAuthenticated>
           <div class="pt-4 pb-3 border-t border-gray-200">
             <div class="space-y-1">
-              <a [routerLink]="['/auth/login']" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+              <!-- Mobile: ir a /bingo con modo login -->
+              <a [routerLink]="['/bingo']" [queryParams]="{ mode: 'signin' }" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
                 Iniciar sesión
               </a>
-              <a [routerLink]="['/auth/register']" class="block px-4 py-2 text-base font-medium text-indigo-600 hover:bg-indigo-50">
+              <!-- Mobile: ir a /bingo con modo registro -->
+              <a [routerLink]="['/bingo']" [queryParams]="{ mode: 'register' }" class="block px-4 py-2 text-base font-medium text-indigo-600 hover:bg-indigo-50">
                 Registrarse
               </a>
             </div>

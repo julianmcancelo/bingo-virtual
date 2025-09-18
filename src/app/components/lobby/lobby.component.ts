@@ -9,6 +9,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { VersionService } from '../../services/version.service';
 import { ChatFlotanteComponent } from '../shared/chat-flotante/chat-flotante.component';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-lobby',
@@ -26,12 +27,50 @@ export class LobbyComponent implements OnInit {
 
   nombreSala = '';
   salaIdUnirse = '';
+  // Estado de autenticación para personalizar la UI del Lobby
+  isAuthenticated = false;
+  currentUserName = '';
+  currentUserId: number | null = null;
 
-  constructor(public versionService: VersionService) {}
+  // --- Métricas del jugador (futuro: persistir en servidor) ---
+  // Por ahora se leen/guardan localmente para mostrar en la UI.
+  victorias = 0;
+  derrotas = 0;
+  lineasCompletas = 0;
+
+  constructor(public versionService: VersionService, private authService: AuthService) {}
 
   ngOnInit(): void {
-    // Al iniciar, el nombre del jugador se pre-carga si viene del login de invitado
-    // No se necesita una variable local adicional, podemos usar 'nombreJugador' directamente.
+    // Al iniciar, detectamos si hay usuario autenticado para personalizar la experiencia.
+    // Si hay sesión, pre-cargamos el nombre del usuario y deshabilitamos la edición del campo.
+    this.authService.currentUser$.subscribe(user => {
+      this.isAuthenticated = !!user;
+      this.currentUserName = user?.nombre_usuario || user?.email || '';
+      this.currentUserId = (user as any)?.id ?? null;
+      if (this.isAuthenticated) {
+        this.nombreJugador = this.currentUserName;
+        // Cargar métricas del usuario si están guardadas en localStorage
+        this.cargarMetricasUsuario();
+      }
+    });
+  }
+
+  /**
+   * Carga métricas del usuario desde localStorage si existen.
+   * Clave: stats_<userId> -> { victorias, derrotas, lineasCompletas }
+   */
+  private cargarMetricasUsuario(): void {
+    try {
+      if (!this.currentUserId) return;
+      const raw = localStorage.getItem(`stats_${this.currentUserId}`);
+      if (!raw) return;
+      const stats = JSON.parse(raw);
+      this.victorias = Number(stats?.victorias || 0);
+      this.derrotas = Number(stats?.derrotas || 0);
+      this.lineasCompletas = Number(stats?.lineasCompletas || 0);
+    } catch {
+      // Ignorar errores de parseo
+    }
   }
 
   onCrearSala(): void {
