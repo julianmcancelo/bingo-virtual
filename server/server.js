@@ -121,19 +121,27 @@ app.use((req, res, next) => {
   next();
 });
 
+// Importar rutas de autenticación
+const authRoutes = require('./routes/auth');
+
 // Rutas de la API
 app.use('/api/v', apiRoutes);
 
-// Rutas de autenticación (mantener compatibilidad)
-app.post('/api/v1/auth/registro', authController.registro);
-app.post('/api/v1/auth/iniciar-sesion', authController.iniciarSesion);
-app.post('/api/v1/auth/cerrar-sesion', authController.cerrarSesion);
-app.post('/api/v1/auth/refresh-token', authController.proteger, authController.refrescarToken);
-// Alias de versión corta /api/v/* para compatibilidad
-app.post('/api/v/auth/registro', authController.registro);
-app.post('/api/v/auth/iniciar-sesion', authController.iniciarSesion);
-app.post('/api/v/auth/cerrar-sesion', authController.cerrarSesion);
-app.post('/api/v/auth/refresh-token', authController.proteger, authController.refrescarToken);
+// Rutas de autenticación (versión 1)
+app.use('/api/v1/auth', authRoutes);
+
+// Alias de versión corta /api/v/auth para compatibilidad
+app.use('/api/v/auth', authRoutes);
+
+// Manejador para rutas no encontradas
+app.use((req, res) => {
+  res.status(404).json({
+    status: 'error',
+    message: 'Ruta no encontrada',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
 
 // Ruta protegida de ejemplo
 app.get('/api/v1/auth/perfil', authController.proteger, authController.obtenerPerfil);
