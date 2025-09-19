@@ -125,15 +125,72 @@ exports.guardarEstadisticas = async (req, res) => {
 
 /**
  * Guarda el log de una partida
+ * @route POST /api/v/games/:gameId/logs
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with operation result
  */
 exports.guardarLogPartida = async (req, res) => {
+  console.log('Solicitud de guardado de log recibida:', {
+    body: req.body,
+    params: req.params,
+    headers: req.headers
+  });
+
   const { partidaId, eventos } = req.body;
   const { gameId } = req.params;
   
-  if (!partidaId || !Array.isArray(eventos)) {
+  // Validación de entrada
+  if (!partidaId) {
+    console.error('Error: partidaId es requerido');
     return res.status(400).json({ 
       estado: 'error', 
-      mensaje: 'Se requieren partidaId y un array de eventos' 
+      mensaje: 'El campo partidaId es requerido',
+      camposFaltantes: ['partidaId']
+    });
+  }
+  
+  if (!Array.isArray(eventos)) {
+    console.error('Error: eventos debe ser un array');
+    return res.status(400).json({ 
+      estado: 'error', 
+      mensaje: 'El campo eventos debe ser un array',
+      tipoEsperado: 'Array',
+      tipoRecibido: typeof eventos
+    });
+  }
+
+  // Validar que al menos hay un evento
+  if (eventos.length === 0) {
+    return res.status(400).json({
+      estado: 'error',
+      mensaje: 'El array de eventos no puede estar vacío'
+    });
+  }
+
+  // Validar la estructura de cada evento
+  const eventosInvalidos = [];
+  eventos.forEach((evento, index) => {
+    if (!evento || typeof evento !== 'object') {
+      eventosInvalidos.push(`Evento en posición ${index}: debe ser un objeto`);
+      return;
+    }
+    
+    if (evento.timestamp && isNaN(new Date(evento.timestamp).getTime())) {
+      eventosInvalidos.push(`Evento en posición ${index}: timestamp inválido`);
+    }
+    
+    if (evento.datos && typeof evento.datos !== 'object') {
+      eventosInvalidos.push(`Evento en posición ${index}: datos debe ser un objeto`);
+    }
+  });
+  
+  if (eventosInvalidos.length > 0) {
+    console.error('Eventos inválidos:', eventosInvalidos);
+    return res.status(400).json({
+      estado: 'error',
+      mensaje: 'Algunos eventos no tienen el formato correcto',
+      errores: eventosInvalidos
     });
   }
 
@@ -145,42 +202,93 @@ exports.guardarLogPartida = async (req, res) => {
       await connection.beginTransaction();
       
       // Insertar cada evento del log
-      for (const evento of eventos) {
-        await connection.execute(
-          `INSERT INTO logs_partidas 
-           (partida_id, tipo, mensaje, datos, timestamp) 
-           VALUES (?, ?, ?, ?, ?)`,
-          [
-            partidaId,
-            evento.tipo || 'evento',
-            evento.mensaje || '',
-            evento.datos ? JSON.stringify(evento.datos) : null,
-            evento.timestamp ? new Date(evento.timestamp) : new Date()
-          ]
-        );
+      const resultados = [];
+      for (const [index, evento] of eventos.entries()) {
+        try {
+          const [result] = await connection.execute(
+            `INSERT INTO logs_partidas 
+             (partida_id, tipo, mensaje, datos, timestamp, game_id) 
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              partidaId,
+              (evento.tipo || 'evento').substring(0, 50), // Asegurar longitud máxima
+              (evento.mensaje || '').substring(0, 500),   // Asegurar longitud máxima
+              evento.datos ? JSON.stringify(evento.datos) : null,
+              evento.timestamp ? new Date(evento.timestamp) : new Date(),
+              gameId || null
+            ]
+          );
+          
+          resultados.push({
+            index,
+            success: true,
+            insertId: result.insertId
+          });
+          
+        } catch (error) {
+          console.error(`Error al insertar evento ${index}:`, error);
+          resultados.push({
+            index,
+            success: false,
+            error: error.message,
+            evento: JSON.stringify(evento)
+          });
+        }
+      }
+      
+      // Verificar si hubo errores
+      const errores = resultados.filter(r => !r.success);
+      
+      if (errores.length > 0) {
+        await connection.rollback();
+        console.error('Errores al guardar logs:', errores);
+        return res.status(207).json({
+          estado: 'parcial',
+          mensaje: 'Algunos eventos no se pudieron guardar',
+          totalEventos: eventos.length,
+          exitosos: resultados.length - errores.length,
+          fallidos: errores.length,
+          errores: errores.map(e => ({
+            index: e.index,
+            error: e.error,
+            evento: e.evento
+          }))
+        });
       }
       
       await connection.commit();
       
+      console.log(`Guardados ${resultados.length} eventos para partida ${partidaId}`);
+      
       res.status(201).json({
         estado: 'éxito',
         partidaId,
-        gameId,
-        totalEventos: eventos.length
+        gameId: gameId || null,
+        totalEventos: resultados.length,
+        exitosos: resultados.length,
+        fallidos: 0
       });
       
     } catch (error) {
       await connection.rollback();
+      console.error('Error en la transacción de guardado de logs:', error);
       throw error;
     } finally {
       connection.release();
     }
   } catch (error) {
-    console.error('Error al guardar logs de partida:', error);
+    console.error('Error al guardar logs de partida:', {
+      error: error.message,
+      stack: error.stack,
+      partidaId,
+      gameId,
+      cantidadEventos: eventos ? eventos.length : 0
+    });
+    
     res.status(500).json({ 
       estado: 'error', 
-      mensaje: 'Error al guardar los logs de la partida',
-      error: error.message
+      mensaje: 'Error interno del servidor al guardar los logs de la partida',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
     });
   }
 };

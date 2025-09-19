@@ -50,26 +50,76 @@ const allowedOrigins = [
   'http://localhost:4200',
   'https://bingo-virtual.onrender.com',
   'https://bingo-virtual.vercel.app',
-  'https://bingo-aled3.vercel.app'
+  'https://bingo-aled3.vercel.app',
+  'https://bingo-aled3.vercel.app/',
+  'http://localhost:3000',
+  'http://localhost:3001'
 ];
 
+// Middleware para log de headers
+app.use((req, res, next) => {
+  console.log('Headers recibidos:', req.headers);
+  console.log('Método:', req.method);
+  console.log('URL:', req.originalUrl);
+  next();
+});
+
 // Configurar CORS para Express
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
     // Permitir solicitudes sin origen (como aplicaciones móviles o curl)
-    if (!origin) return callback(null, true);
-    
-    // Verificar si el origen está permitido
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'La política de CORS para este sitio no permite acceso desde el origen especificado.';
-      return callback(new Error(msg), false);
+    if (!origin) {
+      console.log('Solicitud sin origen (origen nulo)');
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    console.log('Verificando origen CORS:', origin);
+    
+    // Verificar si el origen está en la lista blanca (comparación simple)
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      return origin === allowedOrigin || 
+             origin.replace(/\/$/, '') === allowedOrigin.replace(/\/$/, '');
+    });
+
+    if (isAllowed) {
+      console.log('Origen permitido:', origin);
+      return callback(null, true);
+    } else {
+      console.warn('CORS bloqueado para origen no permitido:', origin);
+      console.log('Orígenes permitidos:', allowedOrigins);
+      return callback(new Error('Not allowed by CORS'), false);
+    }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // Permitir credenciales (cookies)
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-access-token'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  maxAge: 86400 // 24 horas de caché para preflight
+};
+
+// Aplicar CORS a todas las rutas
+app.use(cors(corsOptions));
+
+// Manejar preflight OPTIONS requests
+app.options('*', cors(corsOptions));
+
+// Middleware para agregar headers CORS manualmente
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Responder inmediatamente a las solicitudes OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Rutas de la API
 app.use('/api/v', apiRoutes);
