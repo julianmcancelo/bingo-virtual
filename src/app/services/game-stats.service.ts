@@ -319,10 +319,18 @@ export class GameStatsService {
    */
   getGlobalStats(): Observable<GlobalGameStats> {
     if (environment.production) {
-      return this.http.get<GlobalGameStats>(`${this.apiUrl}/games/global-stats`);
+      return this.http.get<GlobalGameStats>(`${this.apiUrl}/games/global-stats`).pipe(
+        map(stats => ({
+          ...stats,
+          lastGames: stats.lastGames.map(game => ({
+            ...game,
+            date: new Date(game.date)
+          }))
+        }))
+      );
     } else {
       return this.statsSubject.pipe(
-        map(games => this.calculateGlobalStats(games))
+        map(games => this.calculateGlobalStats(games.map(game => this.parseGameStats(game))))
       );
     }
   }
@@ -498,10 +506,18 @@ export class GameStatsService {
    */
   getGameLogs(gameId: string): Observable<GameLog[]> {
     if (environment.production) {
-      return this.http.get<GameLog[]>(`${this.apiUrl}/games/${gameId}/logs`);
+      return this.http.get<GameLog[]>(`${this.apiUrl}/games/${gameId}/logs`).pipe(
+        map(logs => logs.map(log => ({
+          ...log,
+          timestamp: new Date(log.timestamp)
+        })))
+      );
     } else {
       const game = this.statsSubject.value.find(g => g.id === gameId);
-      return of(game?.logs || []);
+      return of((game?.logs || []).map(log => ({
+        ...log,
+        timestamp: new Date(log.timestamp)
+      })));
     }
   }
 }
