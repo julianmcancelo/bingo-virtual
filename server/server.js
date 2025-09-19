@@ -718,7 +718,8 @@ io.on('connection', (socket) => {
             console.error('Error al otorgar experiencia:', error);
           }
         }
-      } // Added missing closing brace here
+      }
+    }
 
     // Actualizar estado del jugador a todos
     io.to(salaId).emit('jugadorActualizado', {
