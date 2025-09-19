@@ -128,6 +128,7 @@ exports.guardarEstadisticas = async (req, res) => {
  */
 exports.guardarLogPartida = async (req, res) => {
   const { partidaId, eventos } = req.body;
+  const { gameId } = req.params;
   
   if (!partidaId || !Array.isArray(eventos)) {
     return res.status(400).json({ 
@@ -138,30 +139,47 @@ exports.guardarLogPartida = async (req, res) => {
 
   try {
     const pool = await db.getPool();
-    const values = eventos.map(evento => [
-      partidaId,
-      evento.tipo || 'evento',
-      evento.mensaje || '',
-      JSON.stringify(evento.datos || {}),
-      new Date(evento.timestamp || Date.now())
-    ]);
-
-    if (values.length > 0) {
-      await pool.query(
-        'INSERT INTO logs_partidas (partida_id, tipo, mensaje, datos, timestamp) VALUES ?',
-        [values]
-      );
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.beginTransaction();
+      
+      // Insertar cada evento del log
+      for (const evento of eventos) {
+        await connection.execute(
+          `INSERT INTO logs_partidas 
+           (partida_id, tipo, mensaje, datos, timestamp) 
+           VALUES (?, ?, ?, ?, ?)`,
+          [
+            partidaId,
+            evento.tipo || 'evento',
+            evento.mensaje || '',
+            evento.datos ? JSON.stringify(evento.datos) : null,
+            evento.timestamp ? new Date(evento.timestamp) : new Date()
+          ]
+        );
+      }
+      
+      await connection.commit();
+      
+      res.status(201).json({
+        estado: 'éxito',
+        partidaId,
+        gameId,
+        totalEventos: eventos.length
+      });
+      
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
     }
-
-    res.status(201).json({
-      estado: 'éxito',
-      eventosGuardados: values.length
-    });
   } catch (error) {
-    console.error('Error al guardar log de partida:', error);
+    console.error('Error al guardar logs de partida:', error);
     res.status(500).json({ 
       estado: 'error', 
-      mensaje: 'Error al guardar el log de la partida',
+      mensaje: 'Error al guardar los logs de la partida',
       error: error.message
     });
   }
