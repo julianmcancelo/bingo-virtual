@@ -73,7 +73,24 @@ router.put(
 // @route   POST api/perfil/avatar
 // @desc    Subir o actualizar el avatar del usuario
 // @access  Privado
-router.post('/avatar', auth, perfilController.subirAvatar);
+router.post('/avatar', 
+  auth, 
+  // Middleware para manejar JSON
+  express.json(),
+  // Middleware para manejar form-data (archivos)
+  (req, res, next) => {
+    // Si ya se procesó un archivo o hay un avatar en el body, continuar
+    if (req.file || (req.body && req.body.avatar)) {
+      return next();
+    }
+    // Si no hay archivo ni avatar, intentar parsear como JSON
+    if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+      return express.json()(req, res, next);
+    }
+    next();
+  },
+  perfilController.subirAvatar
+);
 
 // @route   DELETE api/perfil/avatar
 // @desc    Eliminar el avatar del usuario

@@ -50,6 +50,16 @@ const fileFilter = (req, file, cb) => {
 // Configurar multer con las opciones definidas
 const upload = multer({
   storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  },
+  fileFilter: fileFilter
+});
+
+// Middleware para manejar la carga de archivos con multer
+const uploadAvatar = upload.single('avatar');
+const upload = multer({
+  storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: fileFilter
 }).single('avatar');
@@ -239,6 +249,7 @@ exports.actualizarPerfil = async (req, res) => {
   }
 };
 
+
 /**
  * Sube y actualiza el avatar del usuario
  * @param {Object} req - Objeto de solicitud de Express
@@ -247,28 +258,36 @@ exports.actualizarPerfil = async (req, res) => {
  */
 exports.subirAvatar = async (req, res) => {
   try {
-    // Verificar si se está subiendo un archivo o seleccionando un avatar existente
-    if (req.file) {
-      // Manejar carga de archivo
-      upload.single('avatar')(req, res, async (err) => {
+    // Verificar si se está subiendo un archivo
+    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+      return uploadAvatar(req, res, async (err) => {
         try {
-          if (err instanceof multer.MulterError) {
-            // Error de Multer al cargar el archivo
-            if (err.code === 'LIMIT_FILE_SIZE') {
-              return res.status(400).json({
-                success: false,
-                message: 'El archivo es demasiado grande. El tamaño máximo permitido es de 5MB.'
-              });
+          if (err) {
+            if (err instanceof multer.MulterError) {
+              // Error de Multer al cargar el archivo
+              if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({
+                  success: false,
+                  message: 'El archivo es demasiado grande. El tamaño máximo permitido es de 5MB.'
+                });
+              }
+              throw new Error(err.message);
+            } else {
+              // Otro tipo de error
+              throw err;
             }
-            throw new Error(err.message);
-          } else if (err) {
-            // Otro tipo de error
-            throw err;
+          }
+          
+          if (!req.file) {
+            return res.status(400).json({
+              success: false,
+              message: 'No se ha proporcionado ningún archivo o el archivo no es válido.'
+            });
           }
           
           // Actualizar la URL del avatar en la base de datos
-          const avatarUrl = `/uploads/avatars/${path.basename(req.file.path)}`;
-          await Usuario.actualizarAvatar(req.usuario.id, avatarUrl);
+          const avatarUrl = `/uploads/avatars/${path.basename(req.file.filename)}`;
+          await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
           
           return res.status(200).json({
             success: true,
@@ -296,14 +315,16 @@ exports.subirAvatar = async (req, res) => {
           });
         }
       });
-    } else if (req.body.avatar) {
+    } 
+    // Manejar selección de avatar existente (JSON)
+    else if (req.body && req.body.avatar) {
       try {
-        // Manejar selección de avatar existente
         const avatarFileName = req.body.avatar;
         
-        // Verificar si el archivo existe en la carpeta de avatares
-        // Primero, extraer solo el nombre del archivo por si viene con ruta
+        // Extraer solo el nombre del archivo por si viene con ruta
         const baseFileName = path.basename(avatarFileName);
+        
+        // Verificar si el archivo existe en la carpeta de avatares
         const avatarPath = path.join(__dirname, '../../public/avatars', baseFileName);
         const avatarExists = fs.existsSync(avatarPath);
         
@@ -316,9 +337,8 @@ exports.subirAvatar = async (req, res) => {
         }
         
         // Actualizar la URL del avatar en la base de datos
-        // Usamos la ruta relativa que coincide con la estructura del servidor
         const avatarUrl = `/uploads/avatars/${baseFileName}`;
-        await Usuario.actualizarAvatar(req.usuario.id, avatarUrl);
+        await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
         
         console.log('Avatar actualizado correctamente:', avatarUrl);
         return res.status(200).json({
@@ -339,7 +359,7 @@ exports.subirAvatar = async (req, res) => {
     } else {
       return res.status(400).json({
         success: false,
-        message: 'No se ha seleccionado ningún archivo o avatar.'
+        message: 'No se ha proporcionado ningún archivo o avatar válido.'
       });
     }
   } catch (error) {

@@ -51,7 +51,7 @@ export class PerfilService {
     
     console.log('Enviando solicitud para actualizar avatar:', avatarName);
     
-    // Enviar como JSON con el nombre del archivo
+    // Enviar como JSON para selección de avatar existente
     return this.http.post<{ 
       success: boolean; 
       message: string; 
