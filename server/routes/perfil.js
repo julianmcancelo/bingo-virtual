@@ -74,20 +74,29 @@ router.put(
 // @desc    Subir o actualizar el avatar del usuario
 // @access  Privado
 router.post('/avatar', 
-  auth, 
+  auth,
   // Middleware para manejar JSON
-  express.json(),
-  // Middleware para manejar form-data (archivos)
   (req, res, next) => {
-    // Si ya se procesó un archivo o hay un avatar en el body, continuar
-    if (req.file || (req.body && req.body.avatar)) {
-      return next();
-    }
-    // Si no hay archivo ni avatar, intentar parsear como JSON
+    // Si el contenido es JSON, usar express.json()
     if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
       return express.json()(req, res, next);
     }
     next();
+  },
+  // Middleware para manejar form-data (archivos)
+  (req, res, next) => {
+    // Si no es una solicitud de tipo multipart, pasar al siguiente middleware
+    if (!req.headers['content-type'] || !req.headers['content-type'].includes('multipart/form-data')) {
+      return next();
+    }
+    
+    // Usar el middleware de multer para manejar la carga de archivos
+    perfilController.uploadAvatar(req, res, (err) => {
+      if (err) {
+        return next(err);
+      }
+      next();
+    });
   },
   perfilController.subirAvatar
 );

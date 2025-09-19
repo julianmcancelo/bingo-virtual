@@ -1,9 +1,17 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { Usuario } from 'src/app/models/usuario.model';
+
+interface AvatarResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    avatar_url: string;
+  };
+}
 
 @Injectable({
   providedIn: 'root'
