@@ -261,7 +261,15 @@ exports.subirAvatar = async (req, res) => {
     // Verificar si se está subiendo un archivo
     if (req.file) {
       // Actualizar la URL del avatar en la base de datos
-      const avatarUrl = `/uploads/avatars/${path.basename(req.file.filename)}`;
+      const avatarFileName = path.basename(req.file.filename);
+      const avatarUrl = `/uploads/avatars/${avatarFileName}`;
+      
+      console.log('Nuevo archivo de avatar subido:', {
+        filename: req.file.filename,
+        path: req.file.path,
+        avatarUrl: avatarUrl
+      });
+      
       await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
       
       return res.status(200).json({
@@ -279,12 +287,44 @@ exports.subirAvatar = async (req, res) => {
       // Extraer solo el nombre del archivo por si viene con ruta
       const baseFileName = path.basename(avatarFileName);
       
-      // Verificar si el archivo existe en la carpeta de avatares
-      const avatarPath = path.join(__dirname, '../../public/avatars', baseFileName);
+      // Verificar si es un avatar predefinido (solo el nombre del archivo)
+      const predefinedAvatars = ['16.png', 'lightning.png', 'noctis.png', 'rinoa.png', 'squall.png'];
+      const isPredefinedAvatar = predefinedAvatars.includes(baseFileName);
+      
+      if (isPredefinedAvatar) {
+        try {
+          // Guardar solo el nombre del archivo en la base de datos
+          await Usuario.actualizarAvatarUrl(req.usuario.id, baseFileName);
+          
+          // Construir la URL para el frontend (apunta directamente a assets/avatars/)
+          const frontendUrl = `/assets/avatars/${baseFileName}`;
+          
+          console.log('Avatar predefinido seleccionado:', baseFileName);
+          return res.status(200).json({
+            success: true,
+            message: 'Avatar predefinido actualizado correctamente',
+            data: {
+              avatar_url: baseFileName,  // Solo el nombre del archivo para avatares predefinidos
+              frontend_avatar_url: frontendUrl,  // Ruta directa a los assets
+              is_predefined: true  // Bandera adicional
+            }
+          });
+        } catch (error) {
+          console.error('Error al procesar avatar predefinido:', error);
+          return res.status(500).json({
+            success: false,
+            message: 'Error al procesar el avatar predefinido',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+          });
+        }
+      }
+      
+      // Para avatares personalizados, verificar si el archivo existe
+      const avatarPath = path.join(__dirname, '../../public/uploads/avatars', baseFileName);
       const avatarExists = fs.existsSync(avatarPath);
       
       if (!avatarExists) {
-        console.log('Avatar no encontrado en:', avatarPath);
+        console.log('Avatar personalizado no encontrado en:', avatarPath);
         return res.status(400).json({
           success: false,
           message: 'El archivo de avatar seleccionado no existe en el servidor.'
@@ -295,7 +335,7 @@ exports.subirAvatar = async (req, res) => {
       const avatarUrl = `/uploads/avatars/${baseFileName}`;
       await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
       
-      console.log('Avatar actualizado correctamente:', avatarUrl);
+      console.log('Avatar personalizado actualizado correctamente:', avatarUrl);
       return res.status(200).json({
         success: true,
         message: 'Avatar actualizado correctamente',

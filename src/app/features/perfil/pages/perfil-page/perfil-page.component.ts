@@ -141,26 +141,100 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
     return value !== undefined && value !== null ? value : defaultValue;
   }
 
+  // Lista de avatares predefinidos
+  public predefinedAvatars = [
+    '16.png', 
+    'lightning.png', 
+    'noctis.png', 
+    'rinoa.png', 
+    'squall.png',
+    'firion.png',
+    'jill.png',
+    'sephirot.png',
+    'default-avatar.png'
+  ];
+  
+  // Propiedad para el progreso de carga
+  public uploadProgress = 0;
+  
+  // Avatar actualmente seleccionado
+  public selectedAvatar: string | null = null;
+  
+  // Tipos de archivo permitidos
+  private readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif'];
+  private readonly MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+  /**
+   * Obtiene la URL completa del avatar
+   * @returns string URL completa del avatar
+   */
+  getAvatarUrl(): string {
+    if (!this.usuario || !this.usuario.avatar_url) {
+      return this.avatarService.getAvatarUrl('');
+    }
+
+    const avatarUrl = this.usuario.avatar_url;
+    console.log('Obteniendo URL para avatar:', avatarUrl);
+    
+    // Si ya es una URL completa, la devolvemos tal cual
+    if (avatarUrl.startsWith('http') || avatarUrl.startsWith('data:')) {
+      return avatarUrl;
+    }
+
+    // Extraemos solo el nombre del archivo
+    const fileName = avatarUrl.split('/').pop() || avatarUrl;
+    console.log('Nombre de archivo extraído:', fileName);
+
+    // Verificamos si es un avatar predefinido
+    const isPredefined = this.predefinedAvatars.includes(fileName) || 
+                        (this.usuario as any).is_predefined;
+    
+    console.log('¿Es un avatar predefinido?', isPredefined, 'fileName:', fileName);
+
+    if (isPredefined) {
+      // Para avatares predefinidos, usamos la ruta de assets
+      // Aseguramos que no se duplique la ruta /assets/avatars/
+      const cleanFileName = fileName.replace(/^.*[\\/]/, '');
+      const url = `/assets/avatars/${cleanFileName}`;
+      console.log('URL de avatar predefinido:', url);
+      return url;
+    }
+
+    // Si el archivo ya tiene una ruta completa, la usamos
+    if (avatarUrl.includes('/') || avatarUrl.includes('\\')) {
+      // Si ya tiene la ruta completa, la devolvemos tal cual
+      if (avatarUrl.startsWith('http') || avatarUrl.startsWith('/')) {
+        return avatarUrl;
+      }
+      // Si es una ruta relativa completa, la convertimos a absoluta
+      return `/${avatarUrl}`;
+    }
+
+    // Para avatares personalizados, usamos la ruta del servidor
+    const baseUrl = environment.serverUrl || 'http://localhost:3000';
+    const url = `${baseUrl}/uploads/avatars/${fileName}`;
+    console.log('URL de avatar personalizado:', url);
+    return url;
+  }
+  
   // Cargar la lista de avatares disponibles
   private loadAvatares(): void {
-    const avataresSub = this.avatarService.loadAvatars().subscribe({
-      next: (avatars) => {
-        this.avatares = avatars;
-      },
-      error: (error) => {
-        console.error('Error al cargar los avatares:', error);
-        // Si hay un error, usamos una lista por defecto
-        this.avatares = [
-          '16.png',
-          'lightning.png',
-          'noctis.png',
-          'rinoa.png',
-          'squall.png'
-        ];
+    try {
+      // Usamos los avatares predefinidos
+      this.avatares = [...this.predefinedAvatars];
+      console.log('Avatares predefinidos cargados:', this.avatares);
+      
+      // Si el usuario ya tiene un avatar seleccionado, marcarlo como seleccionado
+      if (this.usuario?.avatar_url) {
+        const currentAvatar = this.usuario.avatar_url.split('/').pop() || '';
+        if (this.predefinedAvatars.includes(currentAvatar)) {
+          this.selectedAvatar = currentAvatar;
+        }
       }
-    });
-    
-    this.subscriptions.add(avataresSub);
+    } catch (error) {
+      console.error('Error al cargar los avatares:', error);
+      this.avatares = [];
+    }
   }
 
   formatDate(date: string | Date | null | undefined): string {
@@ -197,23 +271,29 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
       .pipe(first())
       .subscribe({
         next: (usuario: Usuario) => {
-          if (usuario && this.usuario) {
+          if (usuario) {
             // Si el backend devuelve datos, actualizamos el usuario
             const updatedUser: Usuario = {
-              ...this.usuario,
+              ...(this.usuario || {}),
               ...usuario,
-              id: usuario.id || this.usuario.id,
-              nombre_usuario: usuario.nombre_usuario || this.usuario.nombre_usuario,
-              email: usuario.email || this.usuario.email,
-              creado_en: usuario.creado_en || this.usuario.creado_en
+              // Asegurarse de que los campos requeridos tengan un valor por defecto
+              id: usuario.id || (this.usuario?.id || 0),
+              nombre_usuario: usuario.nombre_usuario || (this.usuario?.nombre_usuario || 'Usuario'),
+              email: usuario.email || (this.usuario?.email || ''),
+              creado_en: usuario.creado_en || (this.usuario?.creado_en || new Date()),
+              // Asegurar que los campos opcionales tengan un valor por defecto
+              apodo: usuario.apodo || '',
+              biografia: usuario.biografia || '',
+              avatar_url: usuario.avatar_url || 'default-avatar.png',
+              es_perfil_publico: usuario.es_perfil_publico ?? true,
+              facebook_url: usuario.facebook_url || '',
+              twitter_url: usuario.twitter_url || '',
+              instagram_url: usuario.instagram_url || '',
+              linkedin_url: usuario.linkedin_url || ''
             };
+            
             this.usuario = updatedUser;
             this.actualizarFormulario(updatedUser);
-            this.updateSocialMediaPresence();
-          } else if (usuario) {
-            // Si no hay usuario actual pero sí datos del perfil
-            this.usuario = usuario;
-            this.actualizarFormulario(usuario);
             this.updateSocialMediaPresence();
           }
           this.cargando = false;
@@ -284,6 +364,10 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
     this.subscriptions.add(updateSub);
   }
 
+  /**
+   * Maneja la selección de un avatar de la lista de avatares predefinidos
+   * @param avatarFileName Nombre del archivo del avatar seleccionado
+   */
   public seleccionarAvatar(avatarFileName: string): void {
     if (!avatarFileName) {
       this.mostrarError('No se ha seleccionado ningún avatar');
@@ -291,31 +375,60 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
     }
 
     this.cargando = true;
-
-    // Obtener solo el nombre del archivo
+    
+    // Extraer solo el nombre del archivo (sin ruta)
     const fileName = avatarFileName.split('/').pop() || avatarFileName;
+    const isPredefined = this.predefinedAvatars.includes(fileName);
+    this.selectedAvatar = fileName; // Guardar solo el nombre del archivo
     
-    console.log('Intentando actualizar avatar con archivo:', fileName);
+    console.log('Actualizando avatar:', { 
+      original: avatarFileName, 
+      fileName,
+      isPredefined
+    });
     
-    // Llamar al servicio para actualizar el avatar
+    // Llamar al servicio para actualizar el avatar en el servidor
     const avatarSub = this.perfilService.actualizarAvatar(fileName)
       .pipe(first())
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           console.log('Respuesta del servidor al actualizar avatar:', response);
           
           if (this.usuario) {
-            // Actualizar la URL del avatar con la devuelta por el servidor
-            this.usuario.avatar_url = response.avatar_url || `assets/avatars/${fileName}`;
+            // Usar frontend_avatar_url si está disponible, de lo contrario usar avatar_url o el nombre del archivo
+            const avatarToStore = response.frontend_avatar_url || response.avatar_url || fileName;
             
-            // También actualizar el servicio de autenticación
-            this.authService.updateUserAvatar(this.usuario.avatar_url);
+            // Actualizar la URL del avatar en el objeto de usuario
+            this.usuario.avatar_url = fileName; // Guardar solo el nombre del archivo
+            
+            // Marcar como predefinido si corresponde
+            if (isPredefined || response.is_predefined) {
+              (this.usuario as any).is_predefined = true;
+            }
+            
+            console.log('Nuevo avatar almacenado:', {
+              avatar_url: fileName,
+              is_predefined: isPredefined || response.is_predefined,
+              response: response
+            });
+            
+            // Actualizar el usuario en el servicio de autenticación
+            if (this.authService.updateUserAvatar) {
+              this.authService.updateUserAvatar(avatarToStore);
+            }
+            
+            // Actualizar el usuario en el almacenamiento local
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (currentUser) {
+              currentUser.avatar_url = fileName; // Guardar solo el nombre del archivo
+              if (isPredefined || response.is_predefined) {
+                currentUser.is_predefined = true;
+              }
+              localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
             
             // Forzar la actualización de la vista
             this.usuario = { ...this.usuario };
-            
-            // Mostrar la nueva imagen del avatar
-            console.log('Avatar actualizado:', this.getAvatarUrl());
           }
           
           this.mostrarMensaje('Avatar actualizado correctamente');
@@ -325,7 +438,7 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
           console.error('Error al actualizar el avatar:', error);
           let errorMessage = 'Error al actualizar el avatar. Por favor, intenta de nuevo.';
           
-          if (error.error && error.error.message) {
+          if (error.error?.message) {
             errorMessage = error.error.message;
           } else if (error.message) {
             errorMessage = error.message;
@@ -363,38 +476,81 @@ export class PerfilPageComponent implements OnInit, OnDestroy {
   private mostrarError(mensaje: string): void {
     this.snackBar.open(mensaje, 'Cerrar', {
       duration: 5000,
-      panelClass: ['error-snackbar']
+      panelClass: ['error-snackbar'],
+      horizontalPosition: 'center',
+      verticalPosition: 'top'
     });
   }
 
-  // Obtiene la URL completa del avatar
-  getAvatarUrl(): string {
-    if (!this.usuario || !this.usuario.avatar_url) {
-      return this.avatarService.getAvatarUrl('');
+  /**
+   * Maneja la selección de un archivo para el avatar
+   * @param event Evento de selección de archivo
+   */
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    
+    if (!file) {
+      return;
     }
     
-    console.log('Obteniendo URL del avatar:', this.usuario.avatar_url);
-    
-    // Si la URL del avatar ya es una URL completa, la devolvemos tal cual
-    if (this.usuario.avatar_url.startsWith('http') || this.usuario.avatar_url.startsWith('data:')) {
-      return this.usuario.avatar_url;
+    // Validar tipo de archivo
+    if (!this.ALLOWED_TYPES.includes(file.type)) {
+      this.mostrarError('Formato de archivo no soportado. Usa JPG, PNG o GIF.');
+      return;
     }
     
-    // Si la URL del avatar empieza con /uploads/avatars/, construimos la URL completa
-    if (this.usuario.avatar_url.startsWith('/uploads/avatars/')) {
-      // Obtener solo el nombre del archivo
-      const fileName = this.usuario.avatar_url.split('/').pop() || '';
-      
-      // Si estamos en desarrollo, usamos la ruta relativa al servidor local
-      if (environment.production) {
-        return `${environment.serverUrl}${this.usuario.avatar_url}`;
-      } else {
-        // En desarrollo, asumimos que los avatares están en assets/avatars
-        return `assets/avatars/${fileName}`;
-      }
+    // Validar tamaño del archivo
+    if (file.size > this.MAX_FILE_SIZE) {
+      this.mostrarError('El archivo es demasiado grande. El tamaño máximo es 2MB.');
+      return;
     }
     
-    // Para cualquier otro caso, usar el servicio de avatar
-    return this.avatarService.getAvatarUrl(this.usuario.avatar_url);
+    // Configurar el progreso
+    this.uploadProgress = 0;
+    this.cargando = true;
+    
+    // Crear un objeto FormData para enviar el archivo
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    // Llamar al servicio para subir el archivo
+    const uploadSub = this.perfilService.actualizarAvatar(file)
+      .pipe(first())
+      .subscribe({
+        next: (response) => {
+          console.log('Avatar subido exitosamente:', response);
+          
+          if (this.usuario) {
+            // Actualizar la URL del avatar
+            this.usuario.avatar_url = response.avatar_url;
+            
+            // Actualizar el usuario en el servicio de autenticación
+            this.authService.updateUserAvatar(response.avatar_url);
+            
+            // Forzar la actualización de la vista
+            this.usuario = { ...this.usuario };
+          }
+          
+          this.mostrarMensaje('Avatar actualizado correctamente');
+        },
+        error: (error) => {
+          console.error('Error al subir el avatar:', error);
+          let errorMessage = 'Error al subir el avatar. Por favor, inténtalo de nuevo.';
+          
+          if (error.error?.message) {
+            errorMessage = error.error.message;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          this.mostrarError(errorMessage);
+        },
+        complete: () => {
+          this.cargando = false;
+          this.uploadProgress = 0;
+        }
+      });
+    
+    this.subscriptions.add(uploadSub);
   }
 }

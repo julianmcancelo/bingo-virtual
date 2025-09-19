@@ -105,6 +105,32 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Configuración de archivos estáticos
+const publicPath = path.join(__dirname, '..', 'public');
+const avatarsPath = path.join(publicPath, 'avatars');
+
+// Asegurarse de que existan los directorios
+[publicPath, avatarsPath].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`Directorio creado: ${dir}`);
+  }
+});
+
+// Servir archivos estáticos desde la carpeta public
+app.use(express.static(publicPath));
+
+// Ruta específica para los avatares
+app.use('/uploads/avatars', express.static(avatarsPath, {
+  setHeaders: (res, path) => {
+    // Permitir el acceso a los archivos estáticos desde cualquier origen
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+}));
+
+console.log('Rutas estáticas configuradas:');
+console.log(`- /uploads/avatars -> ${avatarsPath}`);
+
 // Configuración de rutas API
 app.use('/api/v', apiRoutes);
 

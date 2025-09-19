@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { Usuario } from 'src/app/models/usuario.model';
@@ -25,7 +25,9 @@ export class PerfilService {
    * Obtiene el perfil del usuario autenticado
    */
   obtenerMiPerfil(): Observable<Usuario> {
-    return this.http.get<Usuario>(`${this.apiUrl}/mi-perfil`);
+    return this.http.get<{success: boolean, data: Usuario}>(`${this.apiUrl}/mi-perfil`).pipe(
+      map(response => response.data)
+    );
   }
 
   /**
@@ -53,20 +55,40 @@ export class PerfilService {
    * Actualiza el avatar del usuario
    * @param file Nombre del archivo de avatar o File para subir
    */
-  actualizarAvatar(file: File | string): Observable<{ avatar_url: string }> {
-    let request: Observable<any>;
-    
+  actualizarAvatar(file: File | string): Observable<{ 
+    avatar_url: string;
+    frontend_avatar_url?: string;
+    is_predefined?: boolean;
+  }> {
+    // Si es un string, es el nombre de un avatar predefinido o personalizado
     if (typeof file === 'string') {
-      // Si es un string, es el nombre de un avatar predefinido
+      // Aseguramos que solo tomemos el nombre del archivo sin rutas
       const avatarName = file.split('/').pop() || file;
+      
+      // Verificamos si es un avatar predefinido
+      const predefinedAvatars = ['16.png', 'lightning.png', 'noctis.png', 'rinoa.png', 'squall.png'];
+      const isPredefined = predefinedAvatars.includes(avatarName);
+      
+      // Creamos el cuerpo de la solicitud
       const requestBody = { avatar: avatarName };
       
-      request = this.http.post<{ 
+      console.log('Enviando solicitud para actualizar avatar:', { 
+        avatarName, 
+        isPredefined,
+        requestBody 
+      });
+      
+      // Hacemos la petición al servidor
+      return this.http.post<{ 
         success: boolean; 
         message: string; 
-        data: { avatar_url: string } 
+        data: { 
+          avatar_url: string;
+          frontend_avatar_url?: string;
+          is_predefined?: boolean;
+        } 
       }>(
-        `${this.apiUrl}/avatar`,
+        `${this.apiUrl}/upload-avatar`,
         requestBody,
         {
           headers: {
@@ -75,13 +97,48 @@ export class PerfilService {
           },
           withCredentials: true
         }
+      ).pipe(
+        map((response: any) => {
+          console.log('Respuesta del servidor (raw):', response);
+          
+          // Si la respuesta ya tiene la estructura que necesitamos, la devolvemos directamente
+          if (response.avatar_url || response.data?.avatar_url) {
+            const result = {
+              avatar_url: response.avatar_url || response.data.avatar_url,
+              frontend_avatar_url: response.frontend_avatar_url || response.data?.frontend_avatar_url,
+              is_predefined: response.is_predefined || response.data?.is_predefined
+            };
+            
+            console.log('Datos del avatar a devolver:', result);
+            
+            // Actualizar el usuario en el almacenamiento local
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (currentUser) {
+              currentUser.avatar_url = result.avatar_url;
+              if (result.is_predefined !== undefined) {
+                currentUser.is_predefined = result.is_predefined;
+              }
+              localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+            
+            return result;
+          }
+          
+          // Si no tiene la estructura esperada, lanzamos un error
+          console.error('Estructura de respuesta inesperada:', response);
+          throw new Error('Error inesperado al actualizar el avatar');
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.error('Error al actualizar el avatar:', error);
+          return throwError(() => new Error(error.error?.message || 'Error al actualizar el avatar'));
+        })
       );
     } else {
       // Si es un File, es una carga de archivo
       const formData = new FormData();
       formData.append('avatar', file);
       
-      request = this.http.post<{ 
+      return this.http.post<{ 
         success: boolean; 
         message: string; 
         data: { avatar_url: string } 
@@ -91,27 +148,25 @@ export class PerfilService {
         {
           withCredentials: true
         }
+      ).pipe(
+        map(response => {
+          if (response?.success && response.data?.avatar_url) {
+            // Actualizar el usuario en el almacenamiento local
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (currentUser) {
+              currentUser.avatar_url = response.data.avatar_url;
+              localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+            return { avatar_url: response.data.avatar_url };
+          }
+          throw new Error(response?.message || 'Error al subir el avatar');
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.error('Error al subir el avatar:', error);
+          return throwError(() => new Error(error.error?.message || 'Error al subir el avatar'));
+        })
       );
     }
-    
-    return request.pipe(
-      map(response => {
-        if (response?.success && response.data?.avatar_url) {
-          // Actualizar el usuario en el almacenamiento local
-          const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-          if (currentUser) {
-            currentUser.avatar_url = response.data.avatar_url;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-          }
-          return { avatar_url: response.data.avatar_url };
-        }
-        throw new Error(response?.message || 'Error al actualizar el avatar');
-      }),
-      catchError((error: HttpErrorResponse) => {
-        console.error('Error al actualizar el avatar:', error);
-        return throwError(() => new Error(error.error?.message || 'Error al actualizar el avatar'));
-      })
-    );
   }
 
   /**

@@ -59,13 +59,61 @@
             <form [formGroup]="perfilForm" (ngSubmit)="guardarCambios()">
               <div class="form-section">
                 <h3>Avatar</h3>
+                
+                <!-- Sección para cargar avatar personalizado -->
+                <div class="upload-avatar-section">
+                  <div class="current-avatar">
+                    <img [src]="getAvatarUrl()" [alt]="'Avatar actual'" class="current-avatar-img">
+                  </div>
+                  
+                  <div class="upload-controls">
+                    <input type="file" 
+                           #fileInput 
+                           (change)="onFileSelected($event)" 
+                           accept="image/*" 
+                           style="display: none;">
+                    
+                    <button mat-raised-button 
+                            color="primary" 
+                            (click)="fileInput.click()"
+                            [disabled]="cargando">
+                      <mat-icon>file_upload</mat-icon>
+                      {{ cargando ? 'Cargando...' : 'Subir foto' }}
+                    </button>
+                    
+                    <div class="file-requirements" *ngIf="!cargando">
+                      <small>Formatos: JPG, PNG, GIF (Máx. 2MB)</small>
+                    </div>
+                    
+                    <div class="upload-progress" *ngIf="uploadProgress > 0">
+                      <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
+                      <small>{{ uploadProgress }}% completado</small>
+                    </div>
+                  </div>
+                </div>
+                
+                <h4>O elige uno de nuestros avatares:</h4>
                 <div class="avatares-grid">
                   <div class="avatar-option" 
-                       *ngFor="let avatar of avatares; let i = index"
-                       [class.selected]="usuario?.avatar_url === avatar"
-                       (click)="seleccionarAvatar(avatar)">
-                    <img [src]="'assets/avatars/' + avatar" [alt]="'Avatar ' + (i + 1)">
+                       *ngFor="let avatar of avatares"
+                       [class.selected]="selectedAvatar === avatar"
+                       (click)="seleccionarAvatar(avatar)"
+                       matTooltip="Seleccionar avatar">
+                    <div class="avatar-image-container">
+                      <img [src]="'assets/avatars/' + avatar" 
+                           [alt]="'Avatar ' + avatar"
+                           loading="lazy"
+                           class="avatar-thumbnail">
+                      <div class="avatar-selected" *ngIf="selectedAvatar === avatar">
+                        <mat-icon>check_circle</mat-icon>
+                      </div>
+                    </div>
+                    <span class="avatar-name">{{ avatar.split('.')[0] | titlecase }}</span>
                   </div>
+                </div>
+                <div class="avatar-hint" *ngIf="!avatares?.length">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay avatares disponibles en este momento.</span>
                 </div>
               </div>
 
