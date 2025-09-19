@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { v4: uuidv4 } = require('uuid/v4');
 
 // Tipos de logros disponibles
 const LOGRO_TIPOS = {
@@ -11,38 +12,107 @@ const LOGRO_TIPOS = {
  * Guarda las estadísticas de una partida
  */
 exports.guardarEstadisticas = async (req, res) => {
-  const { usuarioId, salaId, puntuacion, lineasCompletadas, duracion } = req.body;
+  const gameStats = req.body;
   
-  if (!usuarioId || !salaId) {
+  // Validar datos requeridos
+  if (!gameStats || !gameStats.players || !Array.isArray(gameStats.players)) {
+    console.error('Datos de partida inválidos:', gameStats);
     return res.status(400).json({ 
       estado: 'error', 
-      mensaje: 'Se requieren usuarioId y salaId' 
+      mensaje: 'Formato de datos inválido. Se espera un objeto con un array de jugadores.' 
     });
   }
 
   try {
     const pool = await db.getPool();
-    // Verificar si el usuario existe
-    const [userCheck] = await pool.execute('SELECT id FROM usuarios WHERE id = ?', [usuarioId]);
-    if (userCheck.length === 0) {
-      return res.status(404).json({
-        estado: 'error',
-        mensaje: 'Usuario no encontrado'
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.beginTransaction();
+      
+      // Insertar estadísticas para cada jugador
+      const results = [];
+      const gameId = gameStats.gameId || `game_${Date.now()}`;
+      
+      for (const player of gameStats.players) {
+        if (!player.userId) {
+          console.warn('Jugador sin userId, omitiendo:', player);
+          continue;
+        }
+        
+        // Verificar si el usuario existe
+        const [userCheck] = await connection.execute(
+          'SELECT id FROM usuarios WHERE id = ?', 
+          [player.userId]
+        );
+        
+        if (userCheck.length === 0) {
+          console.warn(`Usuario no encontrado: ${player.userId}`);
+          continue;
+        }
+        
+        // Calcular duración en segundos si se proporciona startTime
+        let duration = gameStats.duration || 0;
+        if (gameStats.startTime) {
+          const startTime = new Date(gameStats.startTime);
+          const endTime = gameStats.endTime ? new Date(gameStats.endTime) : new Date();
+          duration = Math.round((endTime - startTime) / 1000);
+        }
+        
+        // Insertar estadísticas de la partida para este jugador
+        const [result] = await connection.execute(
+          `INSERT INTO partidas_estadisticas 
+           (usuario_id, sala_id, puntuacion, lineas_completadas, duracion, creado_en, actualizado_en) 
+           VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+          [
+            player.userId,
+            gameId,
+            player.score || 0,
+            player.linesCompleted || 0,
+            duration
+          ]
+        );
+        
+        // Registrar log de la partida si hay información de log
+        if (player.logs && Array.isArray(player.logs)) {
+          for (const log of player.logs) {
+            await connection.execute(
+              `INSERT INTO logs_partidas 
+               (partida_id, tipo, mensaje, datos, timestamp) 
+               VALUES (?, ?, ?, ?, ?)`,
+              [
+                result.insertId,
+                log.type || 'evento',
+                log.message || '',
+                log.data ? JSON.stringify(log.data) : null,
+                log.timestamp || new Date()
+              ]
+            );
+          }
+        }
+        
+        results.push({
+          userId: player.userId,
+          partidaId: result.insertId,
+          gameId: gameId
+        });
+      }
+      
+      await connection.commit();
+      
+      res.status(201).json({
+        estado: 'éxito',
+        gameId: gameId,
+        resultados: results
       });
+      
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error en la transacción:', error);
+      throw error;
+    } finally {
+      connection.release();
     }
-
-    // Insertar estadísticas de la partida
-    const [result] = await pool.execute(
-      `INSERT INTO partidas_estadisticas 
-       (usuario_id, sala_id, puntuacion, lineas_completadas, duracion) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [usuarioId, salaId, puntuacion || 0, lineasCompletadas || 0, duracion || 0]
-    );
-
-    res.status(201).json({
-      estado: 'éxito',
-      partidaId: result.insertId
-    });
   } catch (error) {
     console.error('Error al guardar estadísticas:', error);
     res.status(500).json({ 

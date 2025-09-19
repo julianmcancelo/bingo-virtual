@@ -583,54 +583,52 @@ io.on('connection', (socket) => {
    */
   // Función para finalizar la partida y guardar estadísticas
   const finalizarPartida = async (sala, ganadorId) => {
-    if (sala.partidaFinalizada) return;
-    sala.partidaFinalizada = true;
-    
     try {
-      const pool = await require('./config/database').getPool();
       const ahora = new Date();
-      const duracion = (ahora - sala.horaInicio) / 1000; // en segundos
+      const duracion = Math.round((ahora - new Date(sala.horaInicio)) / 1000); // Duración en segundos
       
-      // Guardar estadísticas para cada jugador
-      for (const jugador of sala.jugadores) {
-        if (jugador.usuarioId) {
-          const esGanador = jugador.id === ganadorId;
-          
-          // Insertar estadísticas de la partida
-          const [result] = await pool.execute(
-            `INSERT INTO partidas_estadisticas 
-             (usuario_id, sala_id, puntuacion, lineas_completadas, duracion) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [
-              jugador.usuarioId,
-              sala.id,
-              jugador.puntuacion || 0,
-              jugador.lineasCompletadas || 0,
-              duracion
-            ]
-          );
-          
-          // Registrar log de finalización
-          if (esGanador) {
-            await pool.execute(
-              `INSERT INTO logs_partidas 
-               (partida_id, tipo, mensaje, datos) 
-               VALUES (?, ?, ?, ?)`,
-              [
-                result.insertId,
-                'finalizacion',
-                'Partida finalizada como ganador',
-                JSON.stringify({
-                  posicion: 1,
-                  totalJugadores: sala.jugadores.length
-                })
-              ]
-            );
+      // Preparar datos para el controlador de estadísticas
+      const gameStats = {
+        gameId: sala.id,
+        startTime: sala.horaInicio,
+        endTime: ahora,
+        duration: duracion,
+        players: sala.jugadores
+          .filter(jugador => jugador.usuarioId) // Solo jugadores autenticados
+          .map(jugador => ({
+            userId: jugador.usuarioId,
+            score: jugador.puntuacion || 0,
+            linesCompleted: jugador.lineasCompletadas || 0,
+            isWinner: jugador.id === ganadorId,
+            logs: jugador.id === ganadorId ? [{
+              type: 'finalizacion',
+              message: 'Partida finalizada como ganador',
+              data: {
+                posicion: 1,
+                totalJugadores: sala.jugadores.length
+              },
+              timestamp: ahora
+            }] : []
+          }))
+      };
+      
+      // Llamar al controlador de estadísticas
+      const { guardarEstadisticas } = require('./controllers/statsController');
+      const req = { body: gameStats };
+      const res = {
+        status: (code) => ({
+          json: (data) => {
+            if (code >= 200 && code < 300) {
+              console.log(chalk.green('🏆') + ` Estadísticas de la partida ${sala.id} guardadas correctamente`);
+            } else {
+              console.error(chalk.red('❌') + ` Error al guardar estadísticas: ${data.mensaje || 'Error desconocido'}`);
+            }
           }
-        }
-      }
+        })
+      };
       
-      console.log(chalk.green('🏆') + ` Estadísticas de la partida ${sala.id} guardadas correctamente`);
+      await guardarEstadisticas(req, res);
+      
     } catch (error) {
       console.error('Error al guardar estadísticas de la partida:', error);
     }
@@ -684,6 +682,11 @@ io.on('connection', (socket) => {
     const jugador = sala.jugadores.find(j => j.id === jugadorId);
     if (!jugador) return;
 
+    // Guardar el usuarioId en el objeto jugador para usarlo al finalizar la partida
+    if (usuarioId && !jugador.usuarioId) {
+      jugador.usuarioId = usuarioId;
+    }
+
     // Marcar la celda
     jugador.carton[fila][columna].marcada = !jugador.carton[fila][columna].marcada;
 
@@ -713,6 +716,32 @@ io.on('connection', (socket) => {
               chalk.yellow(resultadoBingo.tipo.replace('_', ' ')) + 
               chalk.gray(' en ') + chalk.cyan(sala.nombre) +
               chalk.gray(` (${resultadoBingo.experiencia} XP)`));
+            
+            // Si es un bingo completo, finalizar la partida
+            if (resultadoBingo.tipo === 'bingo' && !sala.juegoTerminado) {
+              sala.juegoTerminado = true;
+              
+              // Detener el sorteo automático
+              if (sala.intervalId) {
+                clearInterval(sala.intervalId);
+                sala.intervalId = null;
+              }
+              
+              // Guardar estadísticas de la partida
+              await finalizarPartida(sala, jugadorId);
+              
+              // Notificar a todos los jugadores que la partida ha terminado
+              io.to(salaId).emit('partidaTerminada', {
+                ganador: {
+                  id: jugador.id,
+                  nombre: jugador.nombre,
+                  puntuacion: jugador.puntuacion,
+                  lineasCompletadas: jugador.lineasCompletadas
+                },
+                tipoGanador: 'bingo',
+                mensaje: `¡${jugador.nombre} ha cantado BINGO!`
+              });
+            }
               
           } catch (error) {
             console.error('Error al otorgar experiencia:', error);
@@ -725,7 +754,8 @@ io.on('connection', (socket) => {
     io.to(salaId).emit('jugadorActualizado', {
       jugadorId: jugadorId,
       puntuacion: jugador.puntuacion,
-      lineasCompletadas: jugador.lineasCompletadas
+      lineasCompletadas: jugador.lineasCompletadas,
+      esGanador: resultadoBingo.hayBingo && resultadoBingo.tipo === 'bingo'
     });
   });
 
