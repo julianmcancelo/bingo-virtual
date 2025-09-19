@@ -218,10 +218,15 @@ export class GameStatsService {
    */
   getPlayerStats(userId: string): Observable<PlayerAggregatedStats> {
     if (environment.production) {
-      return this.http.get<PlayerAggregatedStats>(`${this.apiUrl}/players/${userId}/stats`);
+      return this.http.get<PlayerAggregatedStats>(`${this.apiUrl}/players/${userId}/stats`).pipe(
+        map(stats => ({
+          ...stats,
+          lastPlayed: new Date(stats.lastPlayed)
+        }))
+      );
     } else {
       return this.statsSubject.pipe(
-        map(games => this.calculatePlayerStats(userId, games))
+        map(games => this.calculatePlayerStats(userId, games.map(game => this.parseGameStats(game))))
       );
     }
   }
