@@ -368,27 +368,55 @@ function sortearNumeroEnSala(salaId) {
 /**
  * ALGORITMO DE VERIFICACIÓN DE BINGO MULTIJUGADOR
  * 
- * @description Verifica si un jugador tiene bingo y notifica a la sala
+ * @description Verifica si un jugador tiene bingo, doble línea o línea simple
  * @param {Object} carton - Cartón del jugador
  * @param {string} jugadorId - ID del jugador
  * @param {string} salaId - ID de la sala
- * @returns {Object} Resultado de la verificación
+ * @returns {Object} Resultado de la verificación con tipo de logro
  */
 function verificarBingoMultijugador(carton, jugadorId, salaId) {
   const sala = salas.get(salaId);
   if (!sala) return { hayBingo: false };
 
-  // Para el bingo argentino, verificamos si se completó una línea (fila)
+  // Contar líneas completadas
+  let lineasCompletadas = 0;
+  const lineasGanadoras = [];
+
+  // Verificar cada fila
   for (let i = 0; i < 3; i++) {
-    // Una fila gana si todas sus celdas con número están marcadas
     const fila = carton[i];
     const numerosEnFila = fila.filter(celda => celda.numero !== null);
     if (numerosEnFila.length > 0 && numerosEnFila.every(celda => celda.marcada)) {
-      return { hayBingo: true, tipo: 'linea', linea: i + 1 };
+      lineasCompletadas++;
+      lineasGanadoras.push(i + 1);
     }
   }
 
-  return { hayBingo: false };
+  // Determinar el tipo de logro
+  if (lineasCompletadas === 0) {
+    return { hayBingo: false };
+  } else if (lineasCompletadas >= 3) {
+    return { 
+      hayBingo: true, 
+      tipo: 'bingo', 
+      lineas: lineasGanadoras,
+      experiencia: 200 // Experiencia por bingo completo
+    };
+  } else if (lineasCompletadas === 2) {
+    return { 
+      hayBingo: true, 
+      tipo: 'doble_linea', 
+      lineas: lineasGanadoras,
+      experiencia: 100 // Experiencia por doble línea
+    };
+  } else {
+    return { 
+      hayBingo: true, 
+      tipo: 'linea', 
+      lineas: lineasGanadoras,
+      experiencia: 50 // Experiencia por línea simple
+    };
+  }
 }
 
 /**
@@ -538,8 +566,8 @@ io.on('connection', (socket) => {
   /**
    * EVENTO: Marcar número en cartón
    */
-  socket.on('marcarNumero', (data) => {
-    const { salaId, jugadorId, fila, columna } = data;
+  socket.on('marcarNumero', async (data) => {
+    const { salaId, jugadorId, fila, columna, usuarioId } = data; // Asegúrate de que el cliente envíe el usuarioId
     const sala = salas.get(salaId);
     
     if (!sala) return;
@@ -550,25 +578,50 @@ io.on('connection', (socket) => {
     // Marcar la celda
     jugador.carton[fila][columna].marcada = !jugador.carton[fila][columna].marcada;
 
-    // Verificar bingo
+    // Verificar bingo/líneas
     const resultadoBingo = verificarBingoMultijugador(jugador.carton, jugadorId, salaId);
     
     if (resultadoBingo.hayBingo) {
-      jugador.lineasCompletadas++;
-      jugador.puntuacion += 100;
+      // Actualizar estadísticas del jugador
+      jugador.lineasCompletadas += resultadoBingo.lineas.length;
+      jugador.puntuacion += resultadoBingo.experiencia; // Usamos la experiencia como puntuación
       
-      if (!sala.ganadores.includes(jugadorId)) {
-        sala.ganadores.push(jugadorId);
+      // Solo otorgar experiencia si es la primera vez que completa este logro
+      const logroUnicoKey = `${jugadorId}_${resultadoBingo.tipo}`;
+      if (!sala.logrosOtorgados) sala.logrosOtorgados = new Set();
+      
+      if (!sala.logrosOtorgados.has(logroUnicoKey)) {
+        sala.logrosOtorgados.add(logroUnicoKey);
         
-        // Notificar bingo a toda la sala
-        io.to(salaId).emit('bingo', {
+        // Otorgar experiencia al jugador
+        if (usuarioId) { // Solo si el jugador está autenticado
+          try {
+            const levelService = require('./services/levelService');
+            const accion = resultadoBingo.tipo.toUpperCase();
+            await levelService.otorgarExperiencia(usuarioId, accion);
+            
+            console.log(chalk.green(`✨ ${jugador.nombre} recibió ${resultadoBingo.experiencia} XP por ${resultadoBingo.tipo.replace('_', ' ')}`));
+          } catch (error) {
+            console.error('Error al otorgar experiencia:', error);
+          }
+        }
+        
+        // Notificar logro a toda la sala
+        io.to(salaId).emit('logroDesbloqueado', {
           jugador: jugador.nombre,
           tipo: resultadoBingo.tipo,
-          linea: resultadoBingo.linea,
-          esGanador: sala.ganadores.length === 1
+          lineas: resultadoBingo.lineas,
+          experiencia: resultadoBingo.experiencia,
+          esGanador: !sala.ganadores.includes(jugadorId) && sala.ganadores.push(jugadorId) === 1
         });
-
-        console.log(chalk.red('🎉 ') + chalk.bold.white('¡BINGO! ') + chalk.green(jugador.nombre) + chalk.gray(' completó ') + chalk.yellow(resultadoBingo.tipo) + chalk.gray(' en ') + chalk.cyan(sala.nombre));
+        
+        console.log(chalk.magenta('🏆 ') + chalk.bold.white('LOGRO: ') + 
+                   chalk.green(jugador.nombre) + 
+                   chalk.gray(' completó ') + 
+                   chalk.yellow(resultadoBingo.tipo.replace('_', ' ')) + 
+                   chalk.gray(' en ') + 
+                   chalk.cyan(sala.nombre) +
+                   chalk.gray(` (${resultadoBingo.experiencia} XP)`));
       }
     }
 

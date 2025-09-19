@@ -317,9 +317,16 @@ export class SocketService {
    * @param jugadorId - ID del jugador
    * @param fila - Fila del cartón
    * @param columna - Columna del cartón
+   * @param usuarioId - ID del usuario autenticado (opcional)
    */
-  marcarNumero(salaId: string, jugadorId: string, fila: number, columna: number): void {
-    this.socket.emit('marcarNumero', { salaId, jugadorId, fila, columna });
+  marcarNumero(salaId: string, jugadorId: string, fila: number, columna: number, usuarioId?: number): void {
+    this.socket.emit('marcarNumero', { 
+      salaId, 
+      jugadorId, 
+      fila, 
+      columna, 
+      usuarioId // Incluir el ID del usuario autenticado si está disponible
+    });
   }
 
   /**
