@@ -88,7 +88,7 @@ export class PerfilService {
           is_predefined?: boolean;
         } 
       }>(
-        `${this.apiUrl}/upload-avatar`,
+        `${this.apiUrl}/perfil/avatar`,
         requestBody,
         {
           headers: {
