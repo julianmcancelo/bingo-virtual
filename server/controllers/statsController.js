@@ -1,5 +1,5 @@
 const db = require('../config/database');
-const { v4: uuidv4 } = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 
 // Tipos de logros disponibles
 const LOGRO_TIPOS = {
