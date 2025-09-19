@@ -395,7 +395,19 @@ export class GameStatsService {
 
     // Obtener las últimas partidas
     const lastGames = games
-      .sort((a, b) => b.startTime.getTime() - a.startTime)
+      .map(game => ({
+        ...game,
+        startTime: new Date(game.startTime),
+        endTime: game.endTime ? new Date(game.endTime) : undefined,
+        createdAt: new Date(game.createdAt),
+        updatedAt: new Date(game.updatedAt),
+        players: game.players.map(player => ({
+          ...player,
+          // Asegurarse de que los campos de fecha en los jugadores también sean Date
+          // si existen
+        }))
+      }))
+      .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())
       .slice(0, 5)
       .map(game => ({
         id: game.id,
