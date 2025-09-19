@@ -302,7 +302,9 @@ exports.subirAvatar = async (req, res) => {
         const avatarFileName = req.body.avatar;
         
         // Verificar si el archivo existe en la carpeta de avatares
-        const avatarPath = path.join(__dirname, '../../public/avatars', avatarFileName);
+        // Primero, extraer solo el nombre del archivo por si viene con ruta
+        const baseFileName = path.basename(avatarFileName);
+        const avatarPath = path.join(__dirname, '../../public/avatars', baseFileName);
         const avatarExists = fs.existsSync(avatarPath);
         
         if (!avatarExists) {
@@ -315,8 +317,8 @@ exports.subirAvatar = async (req, res) => {
         
         // Actualizar la URL del avatar en la base de datos
         // Usamos la ruta relativa que coincide con la estructura del servidor
-        const avatarUrl = `/uploads/avatars/${avatarFileName}`;
-        await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
+        const avatarUrl = `/uploads/avatars/${baseFileName}`;
+        await Usuario.actualizarAvatar(req.usuario.id, avatarUrl);
         
         console.log('Avatar actualizado correctamente:', avatarUrl);
         return res.status(200).json({
