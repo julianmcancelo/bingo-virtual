@@ -182,10 +182,35 @@ export class GameStatsService {
    */
   getAllGames(): Observable<GameStats[]> {
     if (environment.production) {
-      return this.http.get<GameStats[]>(`${this.apiUrl}/games/stats`);
+      return this.http.get<GameStats[]>(`${this.apiUrl}/games/stats`).pipe(
+        map(games => games.map(game => this.parseGameStats(game)))
+      );
     } else {
-      return this.statsSubject.asObservable();
+      return this.statsSubject.asObservable().pipe(
+        map(games => games.map(game => this.parseGameStats(game)))
+      );
     }
+  }
+
+  /**
+   * Convierte las fechas de string a objetos Date
+   */
+  private parseGameStats(game: any): GameStats {
+    return {
+      ...game,
+      startTime: new Date(game.startTime),
+      endTime: game.endTime ? new Date(game.endTime) : undefined,
+      createdAt: new Date(game.createdAt),
+      updatedAt: new Date(game.updatedAt),
+      players: game.players ? game.players.map((player: any) => ({
+        ...player,
+        // Asegurar que cualquier fecha en los jugadores también sea convertida
+      })) : [],
+      logs: game.logs ? game.logs.map((log: any) => ({
+        ...log,
+        timestamp: new Date(log.timestamp)
+      })) : []
+    };
   }
 
   /**
