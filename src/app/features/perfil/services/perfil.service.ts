@@ -51,18 +51,19 @@ export class PerfilService {
     
     console.log('Enviando solicitud para actualizar avatar:', avatarName);
     
-    // Crear un objeto FormData para enviar el archivo
-    const formData = new FormData();
-    formData.append('avatar', avatarName);
-    
-    // Enviar como FormData
+    // Enviar como JSON con el nombre del archivo
     return this.http.post<{ 
       success: boolean; 
       message: string; 
       data: { avatar_url: string } 
     }>(
-      `${this.apiUrl}/avatar`, 
-      formData
+      `${this.apiUrl}/avatar`,
+      { avatar: avatarName },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
     ).pipe(
       map(response => {
         console.log('Respuesta del servidor al actualizar avatar:', response);
