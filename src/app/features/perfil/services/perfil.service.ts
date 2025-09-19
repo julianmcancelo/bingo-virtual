@@ -49,31 +49,51 @@ export class PerfilService {
     // Asegurarse de que solo se envíe el nombre del archivo, no la ruta completa
     const avatarName = fileName.split('/').pop() || fileName;
     
-    console.log('Enviando solicitud para actualizar avatar:', avatarName);
+    console.log('=== Iniciando actualizarAvatar ===');
+    console.log('Archivo de avatar seleccionado:', avatarName);
     
     // Enviar como JSON para selección de avatar existente
+    const requestBody = { avatar: avatarName };
+    console.log('Cuerpo de la solicitud:', JSON.stringify(requestBody));
+    
     return this.http.post<{ 
       success: boolean; 
       message: string; 
       data: { avatar_url: string } 
     }>(
       `${this.apiUrl}/avatar`,
-      { avatar: avatarName },
+      requestBody,
       {
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        withCredentials: true
       }
     ).pipe(
+      tap(response => {
+        console.log('=== Respuesta del servidor ===');
+        console.log('Código de estado: 200');
+        console.log('Respuesta:', response);
+      }),
       map(response => {
-        console.log('Respuesta del servidor al actualizar avatar:', response);
         if (response && response.success && response.data && response.data.avatar_url) {
+          console.log('Avatar actualizado exitosamente:', response.data.avatar_url);
           return { avatar_url: response.data.avatar_url };
         }
-        throw new Error(response?.message || 'Error al actualizar el avatar');
+        const errorMessage = response?.message || 'Error al actualizar el avatar';
+        console.error('Error en la respuesta del servidor:', errorMessage);
+        throw new Error(errorMessage);
       }),
       catchError(error => {
-        console.error('Error en la petición de actualización de avatar:', error);
+        console.error('=== Error en la petición ===');
+        console.error('Error completo:', error);
+        if (error.error) {
+          console.error('Error del servidor:', error.error);
+        }
+        if (error.status) {
+          console.error('Código de estado HTTP:', error.status);
+        }
         return throwError(() => error);
       })
     );

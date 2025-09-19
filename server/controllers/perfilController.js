@@ -58,11 +58,6 @@ const upload = multer({
 
 // Middleware para manejar la carga de archivos con multer
 const uploadAvatar = upload.single('avatar');
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: fileFilter
-}).single('avatar');
 
 /**
  * @typedef {Object} PerfilUsuario
@@ -258,6 +253,10 @@ exports.actualizarPerfil = async (req, res) => {
  */
 exports.subirAvatar = async (req, res) => {
   try {
+    console.log('=== Iniciando subirAvatar ===');
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    
     // Verificar si se está subiendo un archivo
     if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
       return uploadAvatar(req, res, async (err) => {
