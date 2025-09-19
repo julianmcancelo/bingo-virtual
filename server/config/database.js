@@ -23,9 +23,8 @@ const dbConfig = {
     user: process.env.PROD_DB_USER || 'jcancelo_aled',
     password: process.env.PROD_DB_PASSWORD || 'feelthesky1',
     database: process.env.PROD_DB_NAME || 'jcancelo_aled',
-    ssl: process.env.PROD_DB_SSL === 'true' ? { 
-      rejectUnauthorized: false 
-    } : false
+    ssl: false, // Deshabilitar SSL explícitamente
+    sslmode: 'DISABLED' // Asegurar que SSL esté deshabilitado
   } : {
     // Configuración para desarrollo
     host: process.env.PROD_DB_HOST || '167.250.5.55',
@@ -33,9 +32,8 @@ const dbConfig = {
     user: process.env.PROD_DB_USER || 'jcancelo_aled',
     password: process.env.PROD_DB_PASSWORD || 'feelthesky1',
     database: process.env.PROD_DB_NAME || 'jcancelo_aled',
-    ssl: process.env.PROD_DB_SSL === 'false' ? {
-      rejectUnauthorized: false
-    } : false
+    ssl: false, // Deshabilitar SSL explícitamente
+    sslmode: 'DISABLED' // Asegurar que SSL esté deshabilitado
   })
 };
 
