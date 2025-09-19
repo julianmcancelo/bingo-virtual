@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { Usuario } from 'src/app/models/usuario.model';
 
@@ -51,58 +51,65 @@ export class PerfilService {
 
   /**
    * Actualiza el avatar del usuario
-   * @param fileName Nombre del archivo de avatar
+   * @param file Nombre del archivo de avatar o File para subir
    */
-  actualizarAvatar(fileName: string): Observable<{ avatar_url: string }> {
-    // Asegurarse de que solo se envíe el nombre del archivo, no la ruta completa
-    const avatarName = fileName.split('/').pop() || fileName;
+  actualizarAvatar(file: File | string): Observable<{ avatar_url: string }> {
+    let request: Observable<any>;
     
-    console.log('=== Iniciando actualizarAvatar ===');
-    console.log('Archivo de avatar seleccionado:', avatarName);
+    if (typeof file === 'string') {
+      // Si es un string, es el nombre de un avatar predefinido
+      const avatarName = file.split('/').pop() || file;
+      const requestBody = { avatar: avatarName };
+      
+      request = this.http.post<{ 
+        success: boolean; 
+        message: string; 
+        data: { avatar_url: string } 
+      }>(
+        `${this.apiUrl}/avatar`,
+        requestBody,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          withCredentials: true
+        }
+      );
+    } else {
+      // Si es un File, es una carga de archivo
+      const formData = new FormData();
+      formData.append('avatar', file);
+      
+      request = this.http.post<{ 
+        success: boolean; 
+        message: string; 
+        data: { avatar_url: string } 
+      }>(
+        `${this.apiUrl}/upload-avatar`,
+        formData,
+        {
+          withCredentials: true
+        }
+      );
+    }
     
-    // Enviar como JSON para selección de avatar existente
-    const requestBody = { avatar: avatarName };
-    console.log('Cuerpo de la solicitud:', JSON.stringify(requestBody));
-    
-    return this.http.post<{ 
-      success: boolean; 
-      message: string; 
-      data: { avatar_url: string } 
-    }>(
-      `${this.apiUrl}/avatar`,
-      requestBody,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        withCredentials: true
-      }
-    ).pipe(
-      tap(response => {
-        console.log('=== Respuesta del servidor ===');
-        console.log('Código de estado: 200');
-        console.log('Respuesta:', response);
-      }),
+    return request.pipe(
       map(response => {
-        if (response && response.success && response.data && response.data.avatar_url) {
-          console.log('Avatar actualizado exitosamente:', response.data.avatar_url);
+        if (response?.success && response.data?.avatar_url) {
+          // Actualizar el usuario en el almacenamiento local
+          const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          if (currentUser) {
+            currentUser.avatar_url = response.data.avatar_url;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          }
           return { avatar_url: response.data.avatar_url };
         }
-        const errorMessage = response?.message || 'Error al actualizar el avatar';
-        console.error('Error en la respuesta del servidor:', errorMessage);
-        throw new Error(errorMessage);
+        throw new Error(response?.message || 'Error al actualizar el avatar');
       }),
-      catchError(error => {
-        console.error('=== Error en la petición ===');
-        console.error('Error completo:', error);
-        if (error.error) {
-          console.error('Error del servidor:', error.error);
-        }
-        if (error.status) {
-          console.error('Código de estado HTTP:', error.status);
-        }
-        return throwError(() => error);
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error al actualizar el avatar:', error);
+        return throwError(() => new Error(error.error?.message || 'Error al actualizar el avatar'));
       })
     );
   }
@@ -110,8 +117,27 @@ export class PerfilService {
   /**
    * Elimina el avatar del usuario
    */
-  eliminarAvatar(): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/avatar`);
+  eliminarAvatar(): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(
+      `${this.apiUrl}/avatar`,
+      { withCredentials: true }
+    ).pipe(
+      map(response => {
+        if (response?.success) {
+          // Actualizar el usuario en el almacenamiento local
+          const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          if (currentUser) {
+            currentUser.avatar_url = null;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          }
+        }
+        return response;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error al eliminar el avatar:', error);
+        return throwError(() => new Error(error.error?.message || 'Error al eliminar el avatar'));
+      })
+    );
   }
 
   /**
@@ -123,9 +149,22 @@ export class PerfilService {
     proximo_cambio_disponible: string;
   }> {
     return this.http.get<{
-      puede_cambiar_apodo: boolean;
-      dias_restantes: number;
-      proximo_cambio_disponible: string;
-    }>(`${this.apiUrl}/verificar-cambio-apodo`);
+      success: boolean;
+      data: {
+        puede_cambiar_apodo: boolean;
+        dias_restantes: number;
+        proximo_cambio_disponible: string;
+      };
+    }>(`${this.apiUrl}/puede-cambiar-apodo`, { withCredentials: true }).pipe(
+      map(response => response?.data || {
+        puede_cambiar_apodo: false,
+        dias_restantes: 0,
+        proximo_cambio_disponible: ''
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error al verificar cambio de apodo:', error);
+        return throwError(() => new Error(error.error?.message || 'Error al verificar cambio de apodo'));
+      })
+    );
   }
 }
