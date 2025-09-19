@@ -27,9 +27,10 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const chalk = require('chalk');
 
-// Importar controladores
+// Importar controladores y rutas
 const authController = require('./controllers/authController');
 const nivelController = require('./controllers/nivelController');
+const apiRoutes = require('./routes/api');
 
 // Inicializar aplicación Express
 const app = express();
@@ -44,13 +45,36 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-// Configurar CORS
+// Configuración de CORS
+const allowedOrigins = [
+  'http://localhost:4200',
+  'https://bingo-virtual.onrender.com',
+  'https://bingo-virtual.vercel.app',
+  'https://bingo-aled3.vercel.app'
+];
+
+// Configurar CORS para Express
 app.use(cors({
-  origin: true, // Permitir cualquier origen en desarrollo
-  credentials: true // Permitir credenciales (cookies)
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (como aplicaciones móviles o curl)
+    if (!origin) return callback(null, true);
+    
+    // Verificar si el origen está permitido
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'La política de CORS para este sitio no permite acceso desde el origen especificado.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // Permitir credenciales (cookies)
 }));
 
-// Rutas de autenticación
+// Rutas de la API
+app.use('/api/v', apiRoutes);
+
+// Rutas de autenticación (mantener compatibilidad)
 app.post('/api/v1/auth/registro', authController.registro);
 app.post('/api/v1/auth/iniciar-sesion', authController.iniciarSesion);
 app.post('/api/v1/auth/cerrar-sesion', authController.cerrarSesion);
@@ -122,15 +146,6 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
-
-// Configuración CORS para permitir conexiones desde Angular
-const allowedOrigins = ['https://bingo-aled3.vercel.app'];
-
-if (process.env.FRONTEND_URL) {
-  // Eliminar la barra final si existe para evitar errores de CORS
-  const frontendUrl = process.env.FRONTEND_URL.replace(/\/$/, '');
-  allowedOrigins.push(frontendUrl);
-}
 
 const io = new Server(server, {
   cors: {
@@ -566,11 +581,105 @@ io.on('connection', (socket) => {
   /**
    * EVENTO: Marcar número en cartón
    */
+  // Función para finalizar la partida y guardar estadísticas
+  const finalizarPartida = async (sala, ganadorId) => {
+    if (sala.partidaFinalizada) return;
+    sala.partidaFinalizada = true;
+    
+    try {
+      const pool = await require('./config/database').getPool();
+      const ahora = new Date();
+      const duracion = (ahora - sala.horaInicio) / 1000; // en segundos
+      
+      // Guardar estadísticas para cada jugador
+      for (const jugador of sala.jugadores) {
+        if (jugador.usuarioId) {
+          const esGanador = jugador.id === ganadorId;
+          
+          // Insertar estadísticas de la partida
+          const [result] = await pool.execute(
+            `INSERT INTO partidas_estadisticas 
+             (usuario_id, sala_id, puntuacion, lineas_completadas, duracion) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [
+              jugador.usuarioId,
+              sala.id,
+              jugador.puntuacion || 0,
+              jugador.lineasCompletadas || 0,
+              duracion
+            ]
+          );
+          
+          // Registrar log de finalización
+          if (esGanador) {
+            await pool.execute(
+              `INSERT INTO logs_partidas 
+               (partida_id, tipo, mensaje, datos) 
+               VALUES (?, ?, ?, ?)`,
+              [
+                result.insertId,
+                'finalizacion',
+                'Partida finalizada como ganador',
+                JSON.stringify({
+                  posicion: 1,
+                  totalJugadores: sala.jugadores.length
+                })
+              ]
+            );
+          }
+        }
+      }
+      
+      console.log(chalk.green('🏆') + ` Estadísticas de la partida ${sala.id} guardadas correctamente`);
+    } catch (error) {
+      console.error('Error al guardar estadísticas de la partida:', error);
+    }
+  };
+
+
+  // Manejar inicio de partida
+  socket.on('iniciarJuego', (data) => {
+    const { salaId } = data;
+    const sala = salas.get(salaId);
+    
+    if (!sala || sala.juegoIniciado) return;
+    
+    sala.juegoIniciado = true;
+    sala.juegoTerminado = false;
+    sala.partidaFinalizada = false;
+    sala.numerosSorteados.clear();
+    sala.ganadores = [];
+    sala.horaInicio = new Date();
+    
+    // Inicializar estadísticas de jugadores
+    sala.jugadores.forEach(jugador => {
+      jugador.puntuacion = 0;
+      jugador.lineasCompletadas = 0;
+    });
+
+    // Iniciar sorteo automático cada 3 segundos
+    sala.intervalId = setInterval(() => {
+      sortearNumeroEnSala(salaId);
+    }, 3000);
+
+    io.to(salaId).emit('juegoIniciado', {
+      mensaje: '¡El juego ha comenzado!',
+      jugadores: sala.jugadores.length,
+      horaInicio: sala.horaInicio
+    });
+
+    console.log(chalk.red('🎮 ') + chalk.bold.white('JUEGO INICIADO: ') + 
+               chalk.yellow(sala.nombre) + 
+               chalk.gray(' con ') + 
+               chalk.cyan(sala.jugadores.length) + 
+               chalk.gray(' jugadores'));
+  });
+
   socket.on('marcarNumero', async (data) => {
     const { salaId, jugadorId, fila, columna, usuarioId } = data; // Asegúrate de que el cliente envíe el usuarioId
     const sala = salas.get(salaId);
     
-    if (!sala) return;
+    if (!sala || !sala.juegoIniciado || sala.juegoTerminado) return;
 
     const jugador = sala.jugadores.find(j => j.id === jugadorId);
     if (!jugador) return;
@@ -600,30 +709,16 @@ io.on('connection', (socket) => {
             const accion = resultadoBingo.tipo.toUpperCase();
             await levelService.otorgarExperiencia(usuarioId, accion);
             
-            console.log(chalk.green(`✨ ${jugador.nombre} recibió ${resultadoBingo.experiencia} XP por ${resultadoBingo.tipo.replace('_', ' ')}`));
+            console.log(chalk.green('🏅') + ` ${jugador.nombre} ha ganado ` + 
+              chalk.yellow(resultadoBingo.tipo.replace('_', ' ')) + 
+              chalk.gray(' en ') + chalk.cyan(sala.nombre) +
+              chalk.gray(` (${resultadoBingo.experiencia} XP)`));
+              
           } catch (error) {
             console.error('Error al otorgar experiencia:', error);
           }
         }
-        
-        // Notificar logro a toda la sala
-        io.to(salaId).emit('logroDesbloqueado', {
-          jugador: jugador.nombre,
-          tipo: resultadoBingo.tipo,
-          lineas: resultadoBingo.lineas,
-          experiencia: resultadoBingo.experiencia,
-          esGanador: !sala.ganadores.includes(jugadorId) && sala.ganadores.push(jugadorId) === 1
-        });
-        
-        console.log(chalk.magenta('🏆 ') + chalk.bold.white('LOGRO: ') + 
-                   chalk.green(jugador.nombre) + 
-                   chalk.gray(' completó ') + 
-                   chalk.yellow(resultadoBingo.tipo.replace('_', ' ')) + 
-                   chalk.gray(' en ') + 
-                   chalk.cyan(sala.nombre) +
-                   chalk.gray(` (${resultadoBingo.experiencia} XP)`));
-      }
-    }
+      } // Added missing closing brace here
 
     // Actualizar estado del jugador a todos
     io.to(salaId).emit('jugadorActualizado', {

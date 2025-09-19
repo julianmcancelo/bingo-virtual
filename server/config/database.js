@@ -94,9 +94,9 @@ async function initDatabase() {
     ON niveles_usuarios(usuario_id);
   `);
 
-  // partidas
+  // salas_partida (renombrada de partidas para evitar conflicto)
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS partidas (
+    CREATE TABLE IF NOT EXISTS salas_partida (
       id INT AUTO_INCREMENT PRIMARY KEY,
       codigo_sala VARCHAR(255) NOT NULL UNIQUE,
       estado VARCHAR(50) NOT NULL DEFAULT 'esperando',
@@ -114,12 +114,54 @@ async function initDatabase() {
       puntuacion INT DEFAULT 0,
       gano TINYINT(1) DEFAULT 0,
       CONSTRAINT fk_jp_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-      CONSTRAINT fk_jp_partida FOREIGN KEY (partida_id) REFERENCES partidas(id) ON DELETE CASCADE,
+      CONSTRAINT fk_jp_partida FOREIGN KEY (partida_id) REFERENCES salas_partida(id) ON DELETE CASCADE,
       UNIQUE KEY uq_usuario_partida (usuario_id, partida_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
 
   console.log('[DB] Tablas MySQL verificadas/inicializadas');
+
+  // Crear tablas de estadísticas
+  try {
+    // Tabla partidas (para estadísticas)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS partidas_estadisticas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT NOT NULL,
+        sala_id VARCHAR(255) NOT NULL,
+        puntuacion INT NOT NULL DEFAULT 0,
+        lineas_completadas INT NOT NULL DEFAULT 0,
+        duracion INT NOT NULL DEFAULT 0 COMMENT 'Duración en segundos',
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // Tabla logs_partidas
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS logs_partidas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        partida_id INT NOT NULL,
+        tipo VARCHAR(50) NOT NULL COMMENT 'Tipo de evento (bingo, linea, doble_linea, etc)',
+        mensaje TEXT,
+        datos JSON,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (partida_id) REFERENCES partidas_estadisticas(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // Crear índices para estadísticas
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_partidas_estadisticas_usuario_id ON partidas_estadisticas(usuario_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_partidas_estadisticas_sala_id ON partidas_estadisticas(sala_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_logs_partida_id ON logs_partidas(partida_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_logs_tipo ON logs_partidas(tipo)');
+
+    console.log('[DB] Tablas de estadísticas creadas correctamente');
+  } catch (error) {
+    console.error('Error al crear tablas de estadísticas:', error);
+    throw error;
+  }
 }
 
 // Inicializar al cargar
