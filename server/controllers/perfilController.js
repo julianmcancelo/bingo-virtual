@@ -57,7 +57,7 @@ const upload = multer({
 });
 
 // Middleware para manejar la carga de archivos con multer
-const uploadAvatar = upload.single('avatar');
+exports.uploadAvatar = upload.single('avatar');
 
 /**
  * @typedef {Object} PerfilUsuario
@@ -256,105 +256,53 @@ exports.subirAvatar = async (req, res) => {
     console.log('=== Iniciando subirAvatar ===');
     console.log('Headers:', req.headers);
     console.log('Body:', req.body);
+    console.log('File:', req.file);
     
     // Verificar si se está subiendo un archivo
-    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
-      return uploadAvatar(req, res, async (err) => {
-        try {
-          if (err) {
-            if (err instanceof multer.MulterError) {
-              // Error de Multer al cargar el archivo
-              if (err.code === 'LIMIT_FILE_SIZE') {
-                return res.status(400).json({
-                  success: false,
-                  message: 'El archivo es demasiado grande. El tamaño máximo permitido es de 5MB.'
-                });
-              }
-              throw new Error(err.message);
-            } else {
-              // Otro tipo de error
-              throw err;
-            }
-          }
-          
-          if (!req.file) {
-            return res.status(400).json({
-              success: false,
-              message: 'No se ha proporcionado ningún archivo o el archivo no es válido.'
-            });
-          }
-          
-          // Actualizar la URL del avatar en la base de datos
-          const avatarUrl = `/uploads/avatars/${path.basename(req.file.filename)}`;
-          await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
-          
-          return res.status(200).json({
-            success: true,
-            message: 'Avatar actualizado correctamente',
-            data: {
-              avatar_url: avatarUrl
-            }
-          });
-        } catch (error) {
-          console.error('Error al subir el avatar:', error);
-          
-          // Eliminar el archivo si se subió pero hubo un error
-          if (req.file && req.file.path) {
-            try {
-              fs.unlinkSync(req.file.path);
-            } catch (unlinkError) {
-              console.error('Error al eliminar el archivo temporal:', unlinkError);
-            }
-          }
-          
-          return res.status(500).json({
-            success: false,
-            message: 'Error al subir el avatar',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-          });
+    if (req.file) {
+      // Actualizar la URL del avatar en la base de datos
+      const avatarUrl = `/uploads/avatars/${path.basename(req.file.filename)}`;
+      await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Avatar actualizado correctamente',
+        data: {
+          avatar_url: avatarUrl
         }
       });
     } 
     // Manejar selección de avatar existente (JSON)
     else if (req.body && req.body.avatar) {
-      try {
-        const avatarFileName = req.body.avatar;
-        
-        // Extraer solo el nombre del archivo por si viene con ruta
-        const baseFileName = path.basename(avatarFileName);
-        
-        // Verificar si el archivo existe en la carpeta de avatares
-        const avatarPath = path.join(__dirname, '../../public/avatars', baseFileName);
-        const avatarExists = fs.existsSync(avatarPath);
-        
-        if (!avatarExists) {
-          console.log('Avatar no encontrado en:', avatarPath);
-          return res.status(400).json({
-            success: false,
-            message: 'El archivo de avatar seleccionado no existe en el servidor.'
-          });
-        }
-        
-        // Actualizar la URL del avatar en la base de datos
-        const avatarUrl = `/uploads/avatars/${baseFileName}`;
-        await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
-        
-        console.log('Avatar actualizado correctamente:', avatarUrl);
-        return res.status(200).json({
-          success: true,
-          message: 'Avatar actualizado correctamente',
-          data: {
-            avatar_url: avatarUrl
-          }
-        });
-      } catch (error) {
-        console.error('Error al actualizar el avatar existente:', error);
-        return res.status(500).json({
+      const avatarFileName = req.body.avatar;
+      
+      // Extraer solo el nombre del archivo por si viene con ruta
+      const baseFileName = path.basename(avatarFileName);
+      
+      // Verificar si el archivo existe en la carpeta de avatares
+      const avatarPath = path.join(__dirname, '../../public/avatars', baseFileName);
+      const avatarExists = fs.existsSync(avatarPath);
+      
+      if (!avatarExists) {
+        console.log('Avatar no encontrado en:', avatarPath);
+        return res.status(400).json({
           success: false,
-          message: 'Error al actualizar el avatar',
-          error: process.env.NODE_ENV === 'development' ? error.message : undefined
+          message: 'El archivo de avatar seleccionado no existe en el servidor.'
         });
       }
+      
+      // Actualizar la URL del avatar en la base de datos
+      const avatarUrl = `/uploads/avatars/${baseFileName}`;
+      await Usuario.actualizarAvatarUrl(req.usuario.id, avatarUrl);
+      
+      console.log('Avatar actualizado correctamente:', avatarUrl);
+      return res.status(200).json({
+        success: true,
+        message: 'Avatar actualizado correctamente',
+        data: {
+          avatar_url: avatarUrl
+        }
+      });
     } else {
       return res.status(400).json({
         success: false,
@@ -363,6 +311,16 @@ exports.subirAvatar = async (req, res) => {
     }
   } catch (error) {
     console.error('Error en el controlador de avatar:', error);
+    
+    // Eliminar el archivo si se subió pero hubo un error
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error al eliminar el archivo temporal:', unlinkError);
+      }
+    }
+    
     return res.status(500).json({
       success: false,
       message: 'Error al procesar la solicitud de avatar',
