@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { LevelService } from '../../services/level.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 /**
  * HeaderComponent - Componente de encabezado de la aplicación
@@ -138,5 +139,47 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.currentXp = this.levelService.getCurrentXp();
     this.xpToNextLevel = this.levelService.getXpToNextLevel();
     this.progressPercentage = this.levelService.getProgressPercentage();
+  }
+
+  /**
+   * Obtiene la URL completa del avatar del usuario
+   * @param avatarPath Ruta relativa del avatar
+   * @returns URL completa del avatar o ruta al avatar por defecto
+   */
+  getAvatarUrl(avatarPath: string | undefined | null): string {
+    // Si no hay ruta de avatar, devolver el avatar por defecto
+    if (!avatarPath) {
+      return 'assets/avatars/default-avatar.png';
+    }
+    
+    // Si ya es una URL completa, la devolvemos tal cual
+    if (avatarPath.startsWith('http')) {
+      return avatarPath;
+    }
+    
+    // Si es una ruta que comienza con /uploads/avatars/, la combinamos con la URL base de la API
+    if (avatarPath.startsWith('/uploads/avatars/')) {
+      const baseUrl = environment.apiUrl || '';
+      return `${baseUrl}${avatarPath}`;
+    }
+    
+    // Si es solo el nombre del archivo, asumimos que está en la carpeta de avatares local
+    if (!avatarPath.includes('/')) {
+      return `assets/avatars/${avatarPath}`;
+    }
+    
+    // Para cualquier otro caso, devolvemos la ruta tal cual
+    return avatarPath;
+  }
+
+  /**
+   * Maneja el error de carga de la imagen del avatar
+   * @param event Evento de error de la imagen
+   */
+  onImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement && imgElement.src !== 'assets/avatars/default-avatar.png') {
+      imgElement.src = 'assets/avatars/default-avatar.png';
+    }
   }
 }

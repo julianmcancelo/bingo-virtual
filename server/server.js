@@ -28,9 +28,9 @@ const { v4: uuidv4 } = require('uuid');
 const chalk = require('chalk');
 
 // Importar controladores y rutas
+const apiRoutes = require('./routes/api');
 const authController = require('./controllers/authController');
 const nivelController = require('./controllers/nivelController');
-const apiRoutes = require('./routes/api');
 
 // Inicializar aplicación Express
 const app = express();
@@ -40,31 +40,20 @@ const server = http.createServer(app);
 
 // La inicialización de la base de datos ahora se maneja en config/database.js
 
-// Configuración de middleware
-app.use(express.json());
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
-
 // Configuración de CORS
 const allowedOrigins = [
   'http://localhost:4200',
   'https://bingo-virtual.onrender.com',
   'https://bingo-virtual.vercel.app',
   'https://bingo-aled3.vercel.app',
-  'https://bingo-aled3.vercel.app/',
   'http://localhost:3000',
-  'http://localhost:3001'
+  'http://localhost:3001',
+  'http://127.0.0.1:4200',
+  'http://localhost:8080',
+  'http://localhost:5173'  // Vite
 ];
 
-// Middleware para log de headers
-app.use((req, res, next) => {
-  console.log('Headers recibidos:', req.headers);
-  console.log('Método:', req.method);
-  console.log('URL:', req.originalUrl);
-  next();
-});
-
-// Configurar CORS para Express
+// Configuración de CORS para Express
 const corsOptions = {
   origin: function (origin, callback) {
     // Permitir solicitudes sin origen (como aplicaciones móviles o curl)
@@ -77,8 +66,11 @@ const corsOptions = {
     
     // Verificar si el origen está en la lista blanca (comparación simple)
     const isAllowed = allowedOrigins.some(allowedOrigin => {
-      return origin === allowedOrigin || 
-             origin.replace(/\/$/, '') === allowedOrigin.replace(/\/$/, '');
+      // Normalizar las URLs para comparación
+      const normalizedOrigin = origin.replace(/\/$/, '');
+      const normalizedAllowed = allowedOrigin.replace(/\/$/, '');
+      return normalizedOrigin === normalizedAllowed || 
+             normalizedOrigin.startsWith(normalizedAllowed);
     });
 
     if (isAllowed) {
@@ -90,12 +82,39 @@ const corsOptions = {
       return callback(new Error('Not allowed by CORS'), false);
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-access-token'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With', 
+    'Accept', 
+    'x-access-token',
+    'Access-Control-Allow-Origin',
+    'Origin'
+  ],
   credentials: true,
   optionsSuccessStatus: 200,
+  preflightContinue: false,
   maxAge: 86400 // 24 horas de caché para preflight
 };
+
+// Configuración de middleware
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Habilitar preflight para todas las rutas
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Configuración de rutas API
+app.use('/api/v', apiRoutes);
+
+// Middleware para log de headers
+app.use((req, res, next) => {
+  console.log('Headers recibidos:', req.headers);
+  console.log('Método:', req.method);
+  console.log('URL:', req.originalUrl);
+  next();
+});
 
 // Aplicar CORS a todas las rutas
 app.use(cors(corsOptions));
@@ -123,9 +142,6 @@ app.use((req, res, next) => {
 
 // Importar rutas de autenticación
 const authRoutes = require('./routes/auth');
-
-// Rutas de la API
-app.use('/api/v', apiRoutes);
 
 // Rutas de autenticación (versión 1)
 app.use('/api/v1/auth', authRoutes);
@@ -205,20 +221,35 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Configuración de Socket.IO con CORS
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      // Permite solicitudes sin 'origin' (como apps móviles o Postman)
+    origin: function (origin, callback) {
+      // Permitir solicitudes sin origen (como aplicaciones móviles o curl)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = 'La política de CORS para este sitio no permite el acceso desde el origen especificado.';
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
+      
+      // Verificar si el origen está en la lista blanca
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        const normalizedOrigin = origin.replace(/\/$/, '');
+        const normalizedAllowed = allowedOrigin.replace(/\/$/, '');
+        return normalizedOrigin === normalizedAllowed || 
+               normalizedOrigin.startsWith(normalizedAllowed);
+      });
+      
+      callback(isAllowed ? null : new Error('Not allowed by CORS'), isAllowed);
     },
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      'Content-Type', 
+      'Authorization', 
+      'X-Requested-With', 
+      'Accept', 
+      'x-access-token'
+    ],
     credentials: true
-  }
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true
 });
 
 app.use(cors());
@@ -909,48 +940,71 @@ app.get('/stats', (req, res) => {
 
 const PORT = 3000;
 
-const showMatrixAnimation = (callback) => {
+const showLoadingAnimation = (callback) => {
   console.clear();
-  const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
-  const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const nums = '0123456789';
-  const characters = katakana + latin + nums;
-  const specialWords = ['BINGO', 'ALED3', 'CANCELO', 'OTERO', 'SALDIVAR'];
-  const highlightColor = chalk.bold.hex('#39FF14'); // Lime green
-
-  let columns = Array(process.stdout.columns).fill(1);
-
-  const stream = () => {
-    process.stdout.write('\x1b[2J\x1b[H'); // Clear screen
-    columns.forEach((y, index) => {
-      const char = characters[Math.floor(Math.random() * characters.length)];
-      const color = Math.random() > 0.9 ? chalk.white : chalk.green;
-      process.stdout.cursorTo(index, y);
-      process.stdout.write(color(char));
-
-      if (y > process.stdout.rows) {
-        columns[index] = 1;
-      } else {
-        columns[index] = y + 1;
-      }
-    });
-    // Inject special words
-    if (Math.random() > 0.95) {
-      const word = specialWords[Math.floor(Math.random() * specialWords.length)];
-      const x = Math.floor(Math.random() * (process.stdout.columns - word.length));
-      const y = Math.floor(Math.random() * process.stdout.rows);
-      process.stdout.cursorTo(x, y);
-      process.stdout.write(highlightColor(word));
-    }
+  
+  // Colores personalizados
+  const colors = {
+    title: chalk.hex('#4CAF50').bold,
+    subtitle: chalk.hex('#81C784'),
+    progress: chalk.hex('#4CAF50'),
+    info: chalk.hex('#81C784'),
+    success: chalk.hex('#4CAF50').bold,
+    highlight: chalk.hex('#FFD700').bold
   };
 
-  const animation = setInterval(stream, 80);
-
-  setTimeout(() => {
-    clearInterval(animation);
-    console.clear();
-    callback();
-  }, 5000); // Duración de la animación: 5 segundos
+  // Mensaje de bienvenida
+  const title = 'BINGO VIRTUAL EDUCATIVO';
+  const subtitle = 'Servidor de Juego Multijugador';
+  const padding = Math.floor((process.stdout.columns - title.length) / 2);
+  
+  console.log('\n'.repeat(2));
+  console.log(' '.repeat(padding) + colors.title(title));
+  console.log(' '.repeat(Math.floor((process.stdout.columns - subtitle.length) / 2)) + colors.subtitle(subtitle));
+  console.log('\n'.repeat(2));
+  
+  // Información del sistema
+  const systemInfo = [
+    `Versión: ${process.version}`,
+    `Plataforma: ${process.platform} ${process.arch}`,
+    `Directorio: ${process.cwd()}`,
+    `Modo: ${process.env.NODE_ENV || 'development'}`
+  ];
+  
+  systemInfo.forEach((info, i) => {
+    console.log(colors.info('  ' + info));
+  });
+  
+  console.log('\n' + ' '.repeat(5) + 'Iniciando servidor...\n');
+  
+  // Barra de progreso
+  const progressBarLength = process.stdout.columns - 30;
+  let progress = 0;
+  
+  const updateProgress = () => {
+    const filled = Math.round(progressBarLength * (progress / 100));
+    const empty = progressBarLength - filled;
+    const bar = '█'.repeat(filled) + '░'.repeat(empty);
+    
+    process.stdout.cursorTo(10, systemInfo.length + 8);
+    process.stdout.clearLine(1);
+    process.stdout.write(colors.progress(`  [${bar}] ${progress}%`));
+    
+    if (progress >= 100) {
+      clearInterval(interval);
+      process.stdout.write(' ' + colors.success('¡Listo!\n\n'));
+      setTimeout(() => {
+        console.clear();
+        callback();
+      }, 500);
+    }
+    
+    progress += Math.floor(Math.random() * 5) + 1;
+    if (progress > 100) progress = 100;
+  };
+  
+  const interval = setInterval(updateProgress, 50);
+  updateProgress();
 };
 
 const startServer = () => {
@@ -996,7 +1050,7 @@ const startServer = () => {
 
 server.listen(PORT, () => {
   if (process.stdout.isTTY) {
-    showMatrixAnimation(startServer);
+    showLoadingAnimation(startServer);
   } else {
     startServer();
   }

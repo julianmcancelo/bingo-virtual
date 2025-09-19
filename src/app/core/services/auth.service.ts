@@ -155,6 +155,33 @@ export class AuthService {
   }
 
   /**
+   * Actualiza el avatar del usuario actual
+   * @param avatarUrl - Nueva URL del avatar
+   */
+  updateUserAvatar(avatarUrl: string): void {
+    const currentUser = this.currentUserSubject.value;
+    if (currentUser) {
+      // Actualizar el usuario con el nuevo avatar
+      const updatedUser = { ...currentUser, avatar: avatarUrl };
+      this.currentUserSubject.next(updatedUser);
+      
+      // Actualizar en el almacenamiento local si estamos en el navegador
+      if (this.isBrowser) {
+        const storedSession = localStorage.getItem('auth_session');
+        if (storedSession) {
+          try {
+            const session = JSON.parse(storedSession);
+            session.user.avatar = avatarUrl;
+            localStorage.setItem('auth_session', JSON.stringify(session));
+          } catch (e) {
+            console.error('Error al actualizar el avatar en el almacenamiento local:', e);
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * OBTENER USUARIO ACTUAL
    * 
    * @returns Usuario | null - Usuario autenticado o null

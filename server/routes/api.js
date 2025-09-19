@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const statsController = require('../controllers/statsController');
+const authRoutes = require('./auth');
+const perfilRoutes = require('./perfil');
 
 // Middleware para log de solicitudes
 router.use((req, res, next) => {
@@ -19,6 +21,12 @@ router.options('*', (req, res) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.status(200).end();
 });
+
+// Rutas de autenticación
+router.use('/auth', authRoutes);
+
+// Rutas de perfil
+router.use('/perfil', perfilRoutes);
 
 // Rutas de estadísticas
 router.post('/games/stats', statsController.guardarEstadisticas);
@@ -45,6 +53,12 @@ router.get('/health', (req, res) => {
     version: '1.0.0'
   });
 });
+
+// Rutas de autenticación
+router.use('/auth', authRoutes);
+
+// Rutas de perfil de usuario
+router.use('/perfil', perfilRoutes);
 
 // Manejador de errores global
 router.use((err, req, res, next) => {

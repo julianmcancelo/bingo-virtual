@@ -3,9 +3,11 @@ const Usuario = require('../models/Usuario');
 
 // Generar token JWT
 const generarToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRETO || 'secreto_para_desarrollo', {
-    expiresIn: '30d', // 30 días de validez
-  });
+  return jwt.sign(
+    { usuario: { id } }, // Estructura consistente para el payload
+    process.env.JWT_SECRETO || 'secreto_para_desarrollo',
+    { expiresIn: '30d' } // 30 días de validez
+  );
 };
 
 // Controlador para cerrar sesión (stateless; el cliente elimina el token)
@@ -25,9 +27,9 @@ exports.cerrarSesion = async (req, res, next) => {
 // Controlador para refrescar token
 exports.refrescarToken = async (req, res, next) => {
   try {
-    // Requiere autenticación previa (middleware proteger)
+    // El middleware auth ya verificó el token y añadió el usuario a req.usuario
     const nuevoToken = jwt.sign(
-      { id: req.usuario.id },
+      { usuario: { id: req.usuario.id } }, // Asegurar la misma estructura que en el login
       process.env.JWT_SECRETO || 'secreto_para_desarrollo',
       { expiresIn: '30d' }
     );
@@ -37,6 +39,7 @@ exports.refrescarToken = async (req, res, next) => {
       token: nuevoToken
     });
   } catch (error) {
+    console.error('Error al refrescar token:', error);
     next(error);
   }
 };
@@ -109,9 +112,9 @@ exports.iniciarSesion = async (req, res, next) => {
     const { email, contrasena } = req.body;
 
     // 1) Verificar si el usuario existe y la contraseña es correcta
-    const usuario = await Usuario.obtenerPorEmail(email);
+    const usuario = await Usuario.verificarCredenciales(email, contrasena);
     
-    if (!usuario || !(await usuario.verificarContrasena(contrasena))) {
+    if (!usuario) {
       return res.status(401).json({
         estado: 'error',
         mensaje: 'Credenciales inválidas'

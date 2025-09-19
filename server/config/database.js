@@ -1,43 +1,75 @@
 const mysql = require('mysql2/promise');
+require('dotenv').config();
 
-// Parámetros desde variables de entorno
-const {
-  DB_HOST = '167.250.5.55',
-  DB_PORT = '3306',
-  DB_USER = 'jcancelo_aled',
-  DB_PASSWORD = 'feelthesky1',
-  DB_NAME = 'jcancelo_aled',
-  DB_SSL = 'false',
-  DB_SSL_REJECT_UNAUTHORIZED = 'false'
-} = process.env;
+// Obtener configuración según el entorno
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Configuración de la base de datos
+const dbConfig = {
+  // Configuración común
+  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 10,
+  queueLimit: parseInt(process.env.DB_QUEUE_LIMIT) || 0,
+  waitForConnections: process.env.DB_WAIT_FOR_CONNECTIONS !== 'false',
+  connectTimeout: 10000,
+  acquireTimeout: 10000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
+  
+  // Configuración específica por entorno
+  ...(isProduction ? {
+    // Configuración para producción
+    host: process.env.PROD_DB_HOST || '167.250.5.55',
+    port: parseInt(process.env.PROD_DB_PORT || '3306', 10),
+    user: process.env.PROD_DB_USER || 'jcancelo_aled',
+    password: process.env.PROD_DB_PASSWORD || 'feelthesky1',
+    database: process.env.PROD_DB_NAME || 'jcancelo_aled',
+    ssl: process.env.PROD_DB_SSL === 'true' ? { 
+      rejectUnauthorized: false 
+    } : false
+  } : {
+    // Configuración para desarrollo
+    host: process.env.PROD_DB_HOST || '167.250.5.55',
+    port: parseInt(process.env.PROD_DB_PORT || '3306', 10),
+    user: process.env.PROD_DB_USER || 'jcancelo_aled',
+    password: process.env.PROD_DB_PASSWORD || 'feelthesky1',
+    database: process.env.PROD_DB_NAME || 'jcancelo_aled',
+    ssl: process.env.PROD_DB_SSL === 'false' ? {
+      rejectUnauthorized: false
+    } : false
+  })
+};
 
 let pool;
 
+// Mostrar configuración (sin contraseña)
+console.log(`[DB] Modo: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
+console.log(`[DB] Conectando a: ${dbConfig.user}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
+
 async function createPool() {
   if (pool) return pool;
-  // Log seguro (no imprime contraseña)
-  console.log(`[DB] Config -> host: ${DB_HOST}, port: ${DB_PORT}, db: ${DB_NAME}, user: ${DB_USER}, ssl: ${DB_SSL}`);
-
-  const sslEnabled = String(DB_SSL).toLowerCase() === 'true';
-  const sslRejectUnauthorized = String(DB_SSL_REJECT_UNAUTHORIZED).toLowerCase() === 'true';
-
-  const poolConfig = {
-    host: DB_HOST,
-    port: Number(DB_PORT),
-    user: DB_USER,
-    password: DB_PASSWORD,
-    database: DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-  };
-
-  if (sslEnabled) {
-    poolConfig.ssl = { rejectUnauthorized: sslRejectUnauthorized };
+  
+  // Mostrar configuración (sin contraseña)
+  console.log(`[DB] Configuración de conexión:`);
+  console.log(`[DB] - Host: ${dbConfig.host}`);
+  console.log(`[DB] - Puerto: ${dbConfig.port}`);
+  console.log(`[DB] - Usuario: ${dbConfig.user}`);
+  console.log(`[DB] - Base de datos: ${dbConfig.database}`);
+  console.log(`[DB] - SSL: ${dbConfig.ssl ? 'Habilitado' : 'Deshabilitado'}`);
+  
+  try {
+    // Crear el pool de conexiones
+    pool = mysql.createPool(dbConfig);
+    
+    // Probar la conexión
+    const connection = await pool.getConnection();
+    console.log('[DB] Conexión exitosa a la base de datos');
+    connection.release();
+    
+    return pool;
+  } catch (error) {
+    console.error('[DB] Error al conectar a la base de datos:', error.message);
+    throw error;
   }
-
-  pool = mysql.createPool(poolConfig);
-  return pool;
 }
 
 async function initDatabase() {

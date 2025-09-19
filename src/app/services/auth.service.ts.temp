@@ -1,0 +1,376 @@
+import { Injectable, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { isPlatformBrowser } from '@angular/common';
+import { environment } from '../../environments/environment';
+import { JwtHelperService } from '@auth0/angular-jwt';
+
+export interface User {
+  id: number;
+  nombre_usuario: string;
+  email: string;
+  token: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private apiUrl = environment.apiUrl;
+  private currentUserSubject: BehaviorSubject<User | null>;
+  public currentUser$: Observable<User | null>;
+  public redirectUrl: string | null = null;
+  
+  private refreshTokenTimeout: any;
+  private jwtHelper = new JwtHelperService();
+
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object, 
+    private http: HttpClient, 
+    private router: Router
+  ) {
+    this.currentUserSubject = new BehaviorSubject<User | null>(this.getUserFromStorage());
+    this.currentUser$ = this.currentUserSubject.asObservable();
+    
+    // Start token refresh timer if user is already logged in
+    this.currentUser$.pipe(take(1)).subscribe(user => {
+      if (user?.token) {
+        this.scheduleTokenRefresh();
+      }
+    });
+  }
+
+  private isBrowser(): boolean {
+    return isPlatformBrowser(this.platformId);
+  }
+
+  private getUserFromStorage(): User | null {
+    if (!this.isBrowser()) return null;
+    try {
+      const user = localStorage.getItem('currentUser');
+      return user ? JSON.parse(user) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private setUserInStorage(user: User | null): void {
+    if (!this.isBrowser()) {
+      this.currentUserSubject.next(user);
+      return;
+    }
+    
+    if (user) {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      localStorage.setItem('token', user.token);
+      this.scheduleTokenRefresh();
+    } else {
+      this.stopTokenRefreshTimer();
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
+    }
+    this.currentUserSubject.next(user);
+  }
+
+  get currentUserValue(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  get isAuthenticated(): boolean {
+    return !!this.currentUserValue;
+  }
+
+  getToken(): string | null {
+    const user = this.currentUserValue;
+    return user?.token || null;
+  }
+  
+  private scheduleTokenRefresh() {
+    const token = this.getToken();
+    if (!token) return;
+    
+    // Parse the JWT token to get expiration time
+    const decodedToken = this.jwtHelper.decodeToken(token);
+    if (!decodedToken?.exp) return;
+    
+    // Set timeout to refresh the token 1 minute before it expires
+    const expiresIn = (decodedToken.exp * 1000) - Date.now() - 60000;
+    
+    // Clear any existing timeout
+    this.stopTokenRefreshTimer();
+    
+    if (expiresIn > 0) {
+      this.refreshTokenTimeout = setTimeout(() => this.refreshToken().subscribe(), expiresIn);
+    } else {
+      // Token is already expired or about to expire, refresh immediately
+      this.refreshToken().subscribe();
+    }
+  }
+  
+  private stopTokenRefreshTimer() {
+    if (this.refreshTokenTimeout) {
+      clearTimeout(this.refreshTokenTimeout);
+    }
+  }
+  
+  refreshToken(): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      console.warn('No hay token disponible para refrescar');
+      return of(null);
+    }
+    
+    console.log('Refrescando token...');
+    
+    return this.http.post<any>(`${this.apiUrl}/auth/refresh-token`, {}, {
+      headers: new HttpHeaders({
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }),
+      withCredentials: true // Asegura que las cookies se envíen con la solicitud
+    }).pipe(
+      tap(response => {
+        console.log('Respuesta de refresh-token:', response);
+        if (response?.token) {
+          const user = this.currentUserValue;
+          if (user) {
+            // Actualizar el token en el usuario actual
+            user.token = response.token;
+            this.setUserInStorage(user);
+            console.log('Token actualizado exitosamente');
+          }
+        }
+      }),
+      catchError(error => {
+        console.error('Error al refrescar el token:', error);
+        // Si falla el refresh token, cerrar sesión
+        if (error.status === 401 || error.status === 500) {
+          console.warn('Sesión expirada, cerrando sesión...');
+          this.logout();
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  login(email: string, password: string): Observable<any> {
+    console.log('Iniciando sesión con:', { email });
+    
+    return this.http.post<any>(
+      `${this.apiUrl}/auth/iniciar-sesion`, 
+      { 
+        email: email.trim(), 
+        contrasena: password 
+      },
+      {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }),
+        withCredentials: true
+      }
+    ).pipe(
+      tap((response: any) => {
+        console.log('Respuesta de inicio de sesión:', response);
+        
+        if (!response) {
+          throw new Error('No se recibió respuesta del servidor');
+        }
+        
+        if (response.estado === 'error') {
+          throw new Error(response.mensaje || 'Error al iniciar sesión');
+        }
+        
+        if (!response.token) {
+          throw new Error('No se recibió un token de autenticación en la respuesta');
+        }
+        
+        const userData = response.datos?.usuario || response.usuario || {};
+        
+        const user = {
+          id: userData.id || 0,
+          nombre_usuario: userData.nombre_usuario || email.split('@')[0],
+          email: userData.email || email,
+          token: response.token
+        };
+        
+        console.log('Usuario autenticado:', user);
+        this.setUserInStorage(user);
+        
+        // Redirigir a la URL almacenada o a la ruta por defecto
+        const redirectUrl = this.redirectUrl || '/bingo';
+        this.redirectUrl = null; // Limpiar la URL almacenada
+        console.log('Redirigiendo a:', redirectUrl);
+        this.router.navigateByUrl(redirectUrl);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error en inicio de sesión:', error);
+        let errorMessage = 'Error al iniciar sesión';
+        
+        if (error.status === 401) {
+          errorMessage = 'Credenciales incorrectas. Por favor, inténtalo de nuevo.';
+        } else if (error.status === 0) {
+          errorMessage = 'No se pudo conectar al servidor. Por favor, verifica tu conexión.';
+        } else if (error.error?.mensaje) {
+          errorMessage = error.error.mensaje;
+        }
+        
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+  }
+
+  register(nombre_usuario: string, email: string, password: string, confirmar_contrasena: string): Observable<any> {
+    console.log('Registrando nuevo usuario:', { email, nombre_usuario });
+    
+    return this.http.post(
+      `${this.apiUrl}/auth/registro`, 
+      {
+        nombre_usuario: nombre_usuario.trim(),
+        email: email.trim().toLowerCase(),
+        contrasena: password,
+        confirmar_contrasena
+      },
+      {
+        headers: new HttpHeaders({
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }),
+        withCredentials: true
+      }
+    ).pipe(
+      tap((response: any) => {
+        console.log('Respuesta de registro:', response);
+        
+        if (!response) {
+          throw new Error('No se recibió respuesta del servidor');
+        }
+        
+        if (response.estado === 'error') {
+          throw new Error(response.mensaje || 'Error en el registro');
+        }
+        
+        if (!response.token) {
+          throw new Error('No se recibió un token de autenticación en la respuesta');
+        }
+        
+        const userData = response.datos?.usuario || response.usuario || {};
+        
+        const user = {
+          id: userData.id || 0,
+          nombre_usuario: userData.nombre_usuario || nombre_usuario,
+          email: userData.email || email,
+          token: response.token
+        };
+        
+        console.log('Usuario registrado y autenticado:', user);
+        this.setUserInStorage(user);
+        
+        // Redirigir a la página principal después del registro exitoso
+        this.router.navigate(['/bingo']);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error en el registro:', error);
+        let errorMessage = 'Error al registrar el usuario';
+        
+        if (error.status === 400 || error.status === 409) {
+          // Errores de validación o usuario/email ya existente
+          errorMessage = error.error?.mensaje || errorMessage;
+        } else if (error.status === 0) {
+          errorMessage = 'No se pudo conectar al servidor. Por favor, verifica tu conexión.';
+        } else if (error.error?.errors) {
+          // Manejar errores de validación del servidor
+          const validationErrors = error.error.errors;
+          errorMessage = Object.values(validationErrors).flat().join(' ');
+        }
+        
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+  }
+
+  logout(redirectToLogin: boolean = true): void {
+    console.log('Iniciando cierre de sesión...');
+    
+    const token = this.getToken();
+    
+    // Función para completar el cierre de sesión localmente
+    const completeLogout = () => {
+      console.log('Completando cierre de sesión...');
+      
+      // Detener el temporizador de actualización de token
+      this.stopTokenRefreshTimer();
+      
+      // Limpiar el almacenamiento local
+      if (this.isBrowser()) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+        sessionStorage.clear();
+      }
+      
+      // Limpiar el estado de autenticación
+      this.currentUserSubject.next(null);
+      
+      // Redirigir a la página de inicio de sesión si es necesario
+      if (redirectToLogin) {
+        console.log('Redirigiendo a la página de inicio de sesión...');
+        this.router.navigate(['/login'], {
+          queryParams: { returnUrl: this.router.routerState.snapshot.url }
+        });
+      }
+      
+      console.log('Sesión cerrada correctamente');
+    };
+    
+    // Si hay un token, intentar cerrar sesión en el servidor
+    if (token) {
+      console.log('Enviando solicitud de cierre de sesión al servidor...');
+      
+      this.http.post(
+        `${this.apiUrl}/auth/cerrar-sesion`, 
+        {},
+        {
+          headers: new HttpHeaders({
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }),
+          withCredentials: true
+        }
+      ).subscribe({
+        next: () => {
+          console.log('Sesión cerrada en el servidor');
+          completeLogout();
+        },
+        error: (error) => {
+          console.error('Error al cerrar sesión en el servidor:', error);
+          // Aún así completar el cierre de sesión localmente
+          completeLogout();
+        },
+        complete: () => {
+          console.log('Solicitud de cierre de sesión completada');
+        }
+      });
+    } else {
+      console.log('No hay token de autenticación, cerrando sesión localmente');
+      completeLogout();
+    }
+  }
+
+  getAuthHeaders(): HttpHeaders {
+    const token = this.getToken();
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    return headers;
+  }
+}

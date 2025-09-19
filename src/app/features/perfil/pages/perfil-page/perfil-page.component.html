@@ -1,0 +1,160 @@
+<div class="perfil-container" *ngIf="!cargando; else loading">
+  <mat-card class="perfil-card">
+    <mat-card-header *ngIf="usuario">
+      <div mat-card-avatar class="avatar-container">
+        <img [src]="getAvatarUrl()" 
+             class="avatar" 
+             [alt]="usuario.nombre_usuario || 'Usuario'">
+      </div>
+      <mat-card-title>
+        <span class="profile-title">Perfil: {{ usuario.nombre_usuario || 'Usuario' }}</span>
+        <span class="apodo" *ngIf="usuario.apodo">"{{ usuario.apodo }}"</span>
+      </mat-card-title>
+      <mat-card-subtitle *ngIf="usuario.email">
+        <mat-icon>email</mat-icon>
+        {{ usuario.email }}
+      </mat-card-subtitle>
+      <mat-card-subtitle *ngIf="usuario.creado_en">
+        <mat-icon>calendar_today</mat-icon>
+        Miembro desde {{ formatDate(usuario.creado_en) }}
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-tab-group [(selectedIndex)]="selectedTab">
+        <!-- Pestaña de Vista General -->
+        <mat-tab label="Mi Perfil">
+          <div class="tab-content">
+            <h3>Información Personal</h3>
+            <p *ngIf="usuario?.biografia; else sinBiografia">
+              {{ usuario?.biografia }}
+            </p>
+            <ng-template #sinBiografia>
+              <p class="sin-datos">No has agregado una biografía aún.</p>
+            </ng-template>
+
+            <div class="redes-sociales" *ngIf="tieneRedesSociales">
+              <h3>Redes Sociales</h3>
+              <div class="redes-lista">
+                <a *ngIf="usuario?.facebook_url" [href]="usuario?.facebook_url" target="_blank" class="red-social">
+                  <i class="fab fa-facebook"></i> Facebook
+                </a>
+                <a *ngIf="usuario?.twitter_url" [href]="usuario?.twitter_url" target="_blank" class="red-social">
+                  <i class="fab fa-twitter"></i> Twitter
+                </a>
+                <a *ngIf="usuario?.instagram_url" [href]="usuario?.instagram_url" target="_blank" class="red-social">
+                  <i class="fab fa-instagram"></i> Instagram
+                </a>
+                <a *ngIf="usuario?.linkedin_url" [href]="usuario?.linkedin_url" target="_blank" class="red-social">
+                  <i class="fab fa-linkedin"></i> LinkedIn
+                </a>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Pestaña de Edición -->
+        <mat-tab label="Editar Perfil">
+          <div class="tab-content">
+            <form [formGroup]="perfilForm" (ngSubmit)="guardarCambios()">
+              <div class="form-section">
+                <h3>Avatar</h3>
+                <div class="avatares-grid">
+                  <div class="avatar-option" 
+                       *ngFor="let avatar of avatares; let i = index"
+                       [class.selected]="usuario?.avatar_url === avatar"
+                       (click)="seleccionarAvatar(avatar)">
+                    <img [src]="'assets/avatars/' + avatar" [alt]="'Avatar ' + (i + 1)">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3>Información Básica</h3>
+                <mat-form-field appearance="outline">
+                  <mat-label>Apodo</mat-label>
+                  <input matInput formControlName="apodo" placeholder="Tu apodo">
+                  <mat-hint>Apodo que se mostrará en lugar de tu nombre de usuario</mat-hint>
+                  <mat-error *ngIf="perfilForm.get('apodo')?.errors?.['minlength']">
+                    El apodo debe tener al menos 3 caracteres
+                  </mat-error>
+                  <mat-error *ngIf="perfilForm.get('apodo')?.errors?.['maxlength']">
+                    El apodo no puede tener más de 30 caracteres
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Biografía</mat-label>
+                  <textarea matInput formControlName="biografia" rows="4" 
+                            placeholder="Cuéntanos sobre ti" maxlength="500"></textarea>
+                  <mat-hint align="end">{{ perfilForm.get('biografia')?.value?.length || 0 }}/500</mat-hint>
+                  <mat-error *ngIf="perfilForm.get('biografia')?.errors?.['maxlength']">
+                    La biografía no puede tener más de 500 caracteres
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="form-section">
+                <h3>Redes Sociales</h3>
+                <mat-form-field appearance="outline">
+                  <mat-label><mat-icon>facebook</mat-icon> Facebook</mat-label>
+                  <input matInput formControlName="facebook_url" placeholder="https://facebook.com/tu-perfil">
+                  <mat-error *ngIf="perfilForm.get('facebook_url')?.errors?.['invalidUrl']">
+                    Por favor ingresa una URL válida
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label><mat-icon>twitter</mat-icon> Twitter</mat-label>
+                  <input matInput formControlName="twitter_url" placeholder="https://twitter.com/tu-perfil">
+                  <mat-error *ngIf="perfilForm.get('twitter_url')?.errors?.['invalidUrl']">
+                    Por favor ingresa una URL válida
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label><mat-icon>photo_camera</mat-icon> Instagram</mat-label>
+                  <input matInput formControlName="instagram_url" placeholder="https://instagram.com/tu-perfil">
+                  <mat-error *ngIf="perfilForm.get('instagram_url')?.errors?.['invalidUrl']">
+                    Por favor ingresa una URL válida
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label><mat-icon>linkedin</mat-icon> LinkedIn</mat-label>
+                  <input matInput formControlName="linkedin_url" placeholder="https://linkedin.com/in/tu-perfil">
+                  <mat-error *ngIf="perfilForm.get('linkedin_url')?.errors?.['invalidUrl']">
+                    Por favor ingresa una URL válida
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="form-section">
+                <mat-checkbox formControlName="es_perfil_publico">
+                  Hacer mi perfil público
+                </mat-checkbox>
+                <p class="hint">Los perfiles públicos pueden ser vistos por otros usuarios.</p>
+              </div>
+
+              <div class="form-actions">
+                <button mat-raised-button color="primary" type="submit" [disabled]="perfilForm.invalid || cargando">
+                  <mat-icon>save</mat-icon> Guardar Cambios
+                </button>
+                <button mat-button type="button" (click)="editando = false" [disabled]="cargando">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<ng-template #loading>
+  <div class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Cargando perfil...</p>
+  </div>
+</ng-template>

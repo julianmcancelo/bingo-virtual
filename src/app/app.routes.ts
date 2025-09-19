@@ -47,6 +47,12 @@ export const routes: Routes = [
     title: 'Administración - Bingo Virtual'
   },
   {
+    path: 'perfil',
+    loadChildren: () => import('./features/perfil/perfil.routes').then(m => m.perfilRoutes),
+    canActivate: [authGuard],
+    title: 'Mi Perfil - Bingo Virtual'
+  },
+  {
     path: '**',
     redirectTo: ''
   }

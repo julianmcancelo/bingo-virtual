@@ -3,14 +3,38 @@ const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
 
-// Configuración de la base de datos desde variables de entorno
+// Usar la misma configuración que en database.js
+const {
+  NODE_ENV = 'development',
+  DB_HOST = 'localhost',
+  DB_PORT = '3306',
+  DB_USER = 'root',
+  DB_PASSWORD = 'tu_contraseña_mysql',
+  DB_NAME = 'bingo_virtual',
+  DB_SOCKET,
+  DB_SSL = 'false',
+  DB_SSL_REJECT_UNAUTHORIZED = 'false'
+} = process.env;
+
+console.log(`[MIGRATIONS] Ejecutando en modo: ${NODE_ENV}`);
+console.log(`[MIGRATIONS] Base de datos: ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
+
+// Configuración de la base de datos
 const dbConfig = {
-  host: process.env.DB_HOST || '167.250.5.55',
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  user: process.env.DB_USER || 'jcancelo_aled',
-  password: process.env.DB_PASSWORD || 'feelthesky1',
-  database: process.env.DB_NAME || 'jcancelo_aled',
-  multipleStatements: true
+  host: DB_HOST,
+  port: parseInt(DB_PORT, 10),
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
+  multipleStatements: true,
+  // Configuración adicional
+  connectTimeout: 10000,
+  ...(DB_SOCKET && { socketPath: DB_SOCKET }),
+  ...(DB_SSL === 'true' && {
+    ssl: { 
+      rejectUnauthorized: DB_SSL_REJECT_UNAUTHORIZED === 'true' 
+    }
+  })
 };
 
 async function runMigrations() {
