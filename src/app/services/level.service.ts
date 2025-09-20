@@ -23,7 +23,7 @@ interface LevelConfig {
  * @author Nicolás Otero <nicolas.otero@alumnos.fi.unlp.edu.ar>
  * @course Algoritmos y Estructuras de Datos III (ALED3)
  * @professor Sebastián Saldivar
- * @year 2024
+ * @year 2025
  * @institution Instituto Beltran
  */
 @Injectable({

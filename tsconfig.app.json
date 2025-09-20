@@ -3,9 +3,17 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["./src/*"],
+      "@app/*": ["./src/app/*"],
+      "@components/*": ["./src/app/components/*"]
+    },
     "types": [
       "node"
-    ]
+    ],
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
   "files": [
     "src/main.ts",

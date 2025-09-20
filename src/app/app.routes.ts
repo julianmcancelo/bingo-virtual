@@ -16,7 +16,7 @@ import { authGuard } from './guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./components/welcome/welcome.component').then(m => m.WelcomeComponent),
+    loadComponent: () => import('@components/welcome/welcome.component').then(m => m.WelcomeComponent),
     title: 'Bienvenido - Bingo Virtual',
     pathMatch: 'full'
   },
@@ -26,13 +26,14 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'bingo',
-    loadComponent: () => import('./components/bingo-game/bingo-game.component').then(m => m.BingoGameComponent),
-    title: 'Jugar - Bingo Virtual'
+    path: 'configuracion',
+    loadComponent: () => import('@components/configuration/configuration.component').then(m => m.ConfigurationComponent),
+    title: 'Configuración - Bingo Virtual'
   },
   {
     path: 'about',
-    loadComponent: () => import('./components/about/about.component').then(m => m.AboutComponent)
+    loadComponent: () => import('@components/about/about.component').then(m => m.AboutComponent),
+    title: 'Acerca de - Bingo Virtual'
   },
   {
     path: 'estadisticas',
@@ -51,6 +52,12 @@ export const routes: Routes = [
     loadChildren: () => import('./features/perfil/perfil.routes').then(m => m.perfilRoutes),
     canActivate: [authGuard],
     title: 'Mi Perfil - Bingo Virtual'
+  },
+  {
+    path: 'bingo',
+    loadComponent: () => import('@components/bingo-game/bingo-game.component').then(m => m.BingoGameComponent),
+    title: 'Juego de Bingo - Bingo Virtual',
+    canActivate: [authGuard]
   },
   {
     path: '**',

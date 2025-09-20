@@ -1,0 +1,279 @@
+<div class="min-h-screen bg-gray-50 p-4">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Dashboard de Estadísticas</h1>
+          <p class="text-gray-600">Análisis completo del rendimiento en Bingo Virtual</p>
+        </div>
+        <div class="mt-2 md:mt-0 text-sm text-gray-500">
+          <mat-icon class="align-middle text-gray-400" style="font-size: 16px; height: 16px; width: 16px;">update</mat-icon>
+          <span class="ml-1">Última actualización: {{ ultimaActualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-12">
+      <mat-spinner diameter="48" class="mx-auto mb-4"></mat-spinner>
+      <p class="text-gray-600">Cargando estadísticas...</p>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div *ngIf="!loading" class="space-y-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <mat-card *ngFor="let stat of estadisticasGenerales" class="stat-card">
+          <mat-card-content class="p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600">{{ stat.label }}</p>
+                <p class="text-2xl font-bold" [style.color]="stat.color">
+                  {{ stat.label.includes('Premios') ? ('$' + formatNumber(stat.valor)) : formatNumber(stat.valor) }}
+                </p>
+                <p class="text-xs text-gray-500 mt-1">{{ stat.descripcion }}</p>
+              </div>
+              <mat-icon [style.color]="stat.color" class="text-3xl">{{ stat.icono }}</mat-icon>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Estadísticas Globales -->
+      <mat-card class="mb-8">
+        <mat-card-header>
+          <mat-card-title>Estadísticas Globales</mat-card-title>
+          <mat-card-subtitle>Datos de toda la plataforma</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="p-6">
+          <div *ngIf="globalStats" class="space-y-6">
+            <!-- Resumen -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div class="bg-blue-50 p-6 rounded-lg">
+                <div class="flex items-center">
+                  <mat-icon class="text-blue-600 mr-3">sports_esports</mat-icon>
+                  <div>
+                    <p class="text-sm text-gray-600">Total de Partidas</p>
+              </div>
+              <div class="stat-box">
+                <h3 class="text-lg font-semibold mb-2">Partidas Ganadas</h3>
+                <p class="text-3xl font-bold">{{ globalStats?.totalPartidas || 0 }}</p>
+                <p class="text-sm text-gray-500 mt-1">Victorias registradas</p>
+              </div>
+              <div class="stat-box">
+                <h3 class="text-lg font-semibold mb-2">Mejor Tiempo</h3>
+                <p class="text-3xl font-bold">{{ globalStats?.mejorTiempo || 0 }}s</p>
+                <p class="text-sm text-gray-500 mt-1">Récord de velocidad</p>
+              </div>
+            </div>
+
+            <!-- Estadísticas Adicionales -->
+            <div class="mt-8">
+              <h3 class="text-lg font-semibold mb-4">Estadísticas de Juego</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="stat-box">
+                  <h4 class="font-medium mb-2">Promedio de Números Cantados</h4>
+                  <p class="text-2xl font-bold">{{ globalStats.promedioNumerosCantados ? globalStats.promedioNumerosCantados.toFixed(1) : 'N/A' }}</p>
+                  <p class="text-sm text-gray-500 mt-1">Por partida</p>
+                </div>
+                <div class="stat-box">
+                  <h4 class="font-medium mb-2">Modo de Juego Preferido</h4>
+                  <p class="text-2xl font-bold">{{ globalStats.modoJuegoPreferido || 'N/A' }}</p>
+                  <p class="text-sm text-gray-500 mt-1">Más jugado</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Últimas Partidas -->
+            <div class="mt-8">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Últimas Partidas</h3>
+                <button mat-button color="primary" [routerLink]="['/estadisticas/historial']">
+                  Ver todo el historial <mat-icon>chevron_right</mat-icon>
+                </button>
+              </div>
+              
+              <div *ngIf="globalStats.ultimasPartidas?.length; else noPartidas" class="space-y-4">
+                <mat-card *ngFor="let partida of globalStats.ultimasPartidas" class="partida-card">
+                  <mat-card-header>
+                    <div mat-card-avatar class="partida-avatar">
+                      <mat-icon>sports_esports</mat-icon>
+                    </div>
+                    <mat-card-title class="!text-base">
+                      {{ partida.modoJuego | titlecase }}
+                      <span class="text-sm font-normal text-gray-500 ml-2">
+                        {{ partida.fechaInicio | date:'dd/MM/yyyy' }}
+                      </span>
+                    </mat-card-title>
+                    <mat-card-subtitle class="!mt-1">
+                      <span class="flex items-center">
+                        <mat-icon class="text-yellow-500 text-base mr-1" style="font-size: 16px; width: 16px; height: 16px;">people</mat-icon>
+                        {{ partida.jugadores.length }} jugadores
+                      </span>
+                    </mat-card-subtitle>
+                  </mat-card-header>
+                  
+                  <mat-card-content class="!mt-2">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <p class="text-sm text-gray-600">
+                          <span class="font-medium">Duración:</span> 
+                          {{ calcularDuracion(partida.fechaInicio, partida.fechaFin) }}
+                        </p>
+                        <p class="text-sm text-gray-600">
+                          <span class="font-medium">Números cantados:</span> 
+                          {{ partida.numerosCantados?.length || 0 }}
+                        </p>
+                      </div>
+                      
+                      <div *ngIf="partida.ganadores?.length" class="text-right">
+                        <p class="text-sm font-medium text-green-600">
+                          <mat-icon class="align-middle text-green-500" style="font-size: 16px; width: 16px; height: 16px;">emoji_events</mat-icon>
+                          {{ partida.ganadores.length }} ganador{{ partida.ganadores.length > 1 ? 'es' : '' }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">
+                          {{ partida.premio ? 'Premio: ' + partida.premio : 'Sin premio' }}
+                        </p>
+                      </div>
+                      
+                      <div *ngIf="!partida.ganadores?.length" class="text-right">
+                        <p class="text-sm text-gray-500">
+                          <mat-icon class="align-middle" style="font-size: 16px; width: 16px; height: 16px;">hourglass_empty</mat-icon>
+                          Sin ganadores
+                        </p>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                  
+                  <mat-card-actions class="!p-4 !pt-0">
+                    <button mat-button color="primary" [routerLink]="['/partida', partida.id, 'resumen']">
+                      Ver detalles
+                    </button>
+                  </mat-card-actions>
+                </mat-card>
+              </div>
+              
+              <ng-template #noPartidas>
+                <div class="text-center py-8 bg-gray-50 rounded-lg">
+                  <mat-icon class="text-gray-400" style="font-size: 48px; width: 48px; height: 48px;">sports_esports</mat-icon>
+                  <p class="mt-2 text-gray-500">No hay partidas recientes</p>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Tabs de Análisis -->
+      <mat-tab-group class="mb-8">
+        <mat-tab label="Rendimiento Personal">
+          <div class="p-6">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Tu Rendimiento</mat-card-title>
+                <mat-card-subtitle>Análisis de tus partidas recientes</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600 mb-2">
+                      {{ globalStats?.completionRate ? (globalStats.completionRate * 100 | number:'1.0-0') + '%' : '--' }}
+                    </div>
+                    <div class="text-sm text-gray-600">Tasa de Finalización</div>
+                    <mat-progress-bar 
+                      mode="determinate" 
+                      [value]="globalStats?.completionRate ? globalStats.completionRate * 100 : 0" 
+                      class="mt-2">
+                    </mat-progress-bar>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600 mb-2">
+                      {{ globalStats?.averageCallsToWin || '--' }}
+                    </div>
+                    <div class="text-sm text-gray-600">Llamadas para Ganar</div>
+                    <mat-progress-bar 
+                      mode="determinate" 
+                      [value]="globalStats?.averageCallsToWin ? (globalStats.averageCallsToWin / 75 * 100) : 0" 
+                      class="mt-2">
+                    </mat-progress-bar>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600 mb-2">
+                      {{ globalStats?.averageGameDuration ? (globalStats.averageGameDuration | number:'1.0-1') + ' min' : '--' }}
+                    </div>
+                    <div class="text-sm text-gray-600">Duración Promedio</div>
+                    <mat-progress-bar 
+                      mode="determinate" 
+                      [value]="globalStats?.averageGameDuration ? (globalStats.averageGameDuration / 15 * 100) : 0" 
+                      class="mt-2">
+                    </mat-progress-bar>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Tendencias">
+          <div class="p-6">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Tendencias y Análisis</mat-card-title>
+                <mat-card-subtitle>Datos históricos y patrones de juego</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content class="p-6">
+                <div class="space-y-6">
+                  <div class="border-l-4 border-blue-500 pl-4">
+                    <h4 class="font-semibold text-gray-800">Modo de Juego Favorito</h4>
+                    <p class="text-sm text-gray-600">{{ globalStats?.mostPopularGameMode || '--' | titlecase }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Basado en partidas jugadas</p>
+                  </div>
+                  <div class="border-l-4 border-green-500 pl-4">
+                    <h4 class="font-semibold text-gray-800">Patrón de Victoria Común</h4>
+                    <p class="text-sm text-gray-600">{{ globalStats?.mostCommonWinningPattern || '--' }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Patrón más frecuente en victorias</p>
+                  </div>
+                  <div class="border-l-4 border-purple-500 pl-4">
+                    <h4 class="font-semibold text-gray-800">Récords</h4>
+                    <p class="text-sm text-gray-600">
+                      Más rápido: {{ globalStats?.fastestWin || '--' }} min · 
+                      Más largo: {{ globalStats?.longestGame || '--' }} min
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">Tiempos de partida registrados</p>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+
+      <!-- Acciones Rápidas -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <mat-card class="action-card cursor-pointer" (click)="navigateToRankings()">
+          <mat-card-content class="p-6 text-center">
+            <mat-icon class="text-4xl text-blue-600 mb-4">leaderboard</mat-icon>
+            <h3 class="text-lg font-semibold mb-2">Ver Rankings</h3>
+            <p class="text-sm text-gray-600">Consulta los mejores jugadores</p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="action-card cursor-pointer" (click)="navigateToHistorial()">
+          <mat-card-content class="p-6 text-center">
+            <mat-icon class="text-4xl text-green-600 mb-4">history</mat-icon>
+            <h3 class="text-lg font-semibold mb-2">Historial</h3>
+            <p class="text-sm text-gray-600">Revisa tus partidas anteriores</p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="action-card cursor-pointer" (click)="goToBingo()">
+          <mat-card-content class="p-6 text-center">
+            <mat-icon class="text-4xl text-purple-600 mb-4">casino</mat-icon>
+            <h3 class="text-lg font-semibold mb-2">Jugar Bingo</h3>
+            <p class="text-sm text-gray-600">Volver al juego principal</p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+</div>

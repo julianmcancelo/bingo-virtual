@@ -5,6 +5,21 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import bootstrap from './src/main.server';
 
+// Register path aliases for server-side rendering
+import 'module-alias/register';
+import moduleAlias from 'module-alias';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load module aliases from _moduleAliases.js
+const aliases = require('../_moduleAliases.js');
+
+// Add aliases to module-alias
+if (aliases) {
+  moduleAlias.addAliases(aliases);
+}
+
 // The Express app is exported so that it can be used by serverless Functions.
 export function app(): express.Express {
   const server = express();

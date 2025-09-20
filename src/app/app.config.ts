@@ -8,6 +8,7 @@ import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { LevelService } from './services/level.service';
 import { GameStatsService } from './services/game-stats.service';
+import { EstadisticasService } from './services/estadisticas.service';
 import { authInterceptor } from './interceptors/auth.interceptor';
 
 // Angular Material
@@ -25,6 +26,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -46,6 +48,7 @@ export const appConfig: ApplicationConfig = {
     MatSnackBar,
     LevelService,
     GameStatsService,
+    EstadisticasService,
     { provide: 'isBrowser', useFactory: (id: Object) => isPlatformBrowser(id), deps: [PLATFORM_ID] },
     // Angular Material Modules
     MatCardModule,
@@ -59,6 +62,7 @@ export const appConfig: ApplicationConfig = {
     MatTooltipModule,
     MatSelectModule,
     MatProgressBarModule,
-    MatDividerModule
+    MatDividerModule,
+    MatSlideToggleModule
   ]
 };

@@ -33,7 +33,10 @@
             "prerender": true,
             "ssr": {
               "entry": "server.ts"
-            }
+            },
+            "externalDependencies": [
+              "module-alias"
+            ]
           },
           "configurations": {
             "production": {

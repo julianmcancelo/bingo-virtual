@@ -1,6 +1,6 @@
 /**
- * Universidad Nacional de La Plata - Facultad de Informática
- * Algoritmos y Estructuras de Datos III (ALED3) - 2024
+ * Instituto Tecnológico Beltrán - Avellaneda
+ * Algoritmos y Estructuras de Datos III (ALED3) - 2025
  * 
  * Trabajo Final: Bingo Virtual Educativo
  * 
